@@ -1,0 +1,17 @@
+FROM node:latest
+
+WORKDIR /JS_DB
+
+# Clonar el repositorio directamente desde GitHub
+RUN git clone https://github.com/Ajax-16/JS_DB.git .
+
+# Instalar dependencias
+RUN npm install
+
+# Cambiar al directorio "server"
+WORKDIR /JS_DB/server
+
+EXPOSE 3000
+
+# Ejecutar la aplicación
+CMD ["node", "server.js"]

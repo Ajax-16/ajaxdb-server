@@ -1,0 +1,11 @@
+version: '3'
+services:
+  js_db:
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      - 'js_db:/JS_DB/db'
+
+volumes:
+  js_db:
