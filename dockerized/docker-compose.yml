@@ -1,11 +1,11 @@
 version: '3'
 services:
-  js_db:
-    build: .
+  node_app:
+    image: ajax16-db:latest
     ports:
-      - '3000:3000'
+      - "3000:3000"
     volumes:
-      - 'js_db:/JS_DB/db'
+      - 'js_db:/JS_DB/node_modules/ajax16-db/db'
 
 volumes:
   js_db:
