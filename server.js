@@ -1,5 +1,5 @@
 import net from 'net';
-import { DB } from './db.js';
+import { DB } from 'ajax16-db';
 
 const PORT = 3000;
 
