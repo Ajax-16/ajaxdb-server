@@ -1,5 +1,6 @@
 import net from 'net';
-import { DB } from 'ajax16-db';
+import { DB, dropDb } from 'ajax16-db';
+import { verifySyntax } from './syntax.js';
 
 const PORT = 3000;
 
@@ -26,12 +27,15 @@ const server = net.createServer(async (socket) => {
 });
 
 async function executeCommand(command) {
+
+  verifySyntax(command);
+
   const commandParts = command.split(' ');
   const action = commandParts[0].toUpperCase();
   const tableName = commandParts[2];
 
   switch (action) {
-    case 'USE':
+    case 'INIT':
       const dbName = commandParts[1].split(';').shift();
       currentDB = new DB(dbName);
       await currentDB.init();
@@ -39,7 +43,7 @@ async function executeCommand(command) {
 
     case 'CREATE':
       if (!(currentDB instanceof DB)) {
-        throw new Error('No database selected. Use "USE <database_name>" to select a database.');
+        throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
       }
 
       const columnsStartIndex = command.indexOf('(');
@@ -57,7 +61,7 @@ async function executeCommand(command) {
 
     case 'INSERT':
       if (!(currentDB instanceof DB)) {
-        throw new Error('No database selected. Use "USE <database_name>" to select a database.');
+        throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
       }
       const valuesStartIndex = command.indexOf('(') + 1;
       const valuesEndIndex = command.lastIndexOf(')');
@@ -69,9 +73,9 @@ async function executeCommand(command) {
         });
       return await currentDB.insert({ tableName, values });
 
-    case 'SELECT':
+    case 'FIND':
       if (!(currentDB instanceof DB)) {
-        throw new Error('No database selected. Use "USE <database_name>" to select a database.');
+        throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
       }
       const conditionStartIndex = command.indexOf('WHERE') + 6;
       const conditionEndIndex = command.lastIndexOf('=');
@@ -83,14 +87,23 @@ async function executeCommand(command) {
       return await currentDB.find({ tableName, condition, conditionValue });
 
     case 'DROP':
-      if (!(currentDB instanceof DB)) {
-        throw new Error('No database selected. Use "USE <database_name>" to select a database.');
+
+      const element = commandParts[1];
+
+      switch (element) {
+        case 'DATABASE':
+
+        return await dropDb(commandParts[2].trim());
+
+        case 'TABLE':
+          if (!(currentDB instanceof DB)) {
+            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+          }
+
+        return await currentDB.dropTable(commandParts[2].trim());
+
       }
 
-      return await currentDB.dropTable(tableName);
-
-    default:
-      throw new Error('Unsupported command');
   }
 }
 
@@ -101,8 +114,8 @@ server.listen(PORT, () => {
 function clean(string) {
   if ((string.startsWith("'") && string.endsWith("'")) ||
     (string.startsWith('"') && string.endsWith('"'))) {
-      return string.substring(1, string.length - 1);
-  }else{
+    return string.substring(1, string.length - 1);
+  } else {
     const parsedValue = parseFloat(string);
     return isNaN(parsedValue) ? string : parsedValue;
   }
