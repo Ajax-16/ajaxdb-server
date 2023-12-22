@@ -30,8 +30,6 @@ export function verifySyntax(command) {
                 execError('2 arguments expected (database or table name) but got: ' + (commandParts.length - 1).toString());
             }
 
-            console.log(typeof dropElement);
-
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
                 case 'TABLE':
