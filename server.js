@@ -81,7 +81,15 @@ async function executeCommand(command) {
       if (!(currentDB instanceof DB)) {
         throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
       }
-      const conditionStartIndex = command.indexOf('WHERE') + 6;
+
+      const where = commandParts[3]
+
+      const conditionStartIndex = command.indexOf(where) + 6;
+
+      if(conditionStartIndex === 5) { // Si no existe, devuelve -1, por eso, si no existe conditionStartIndex será 5 (6-1)
+        return await currentDB.showOneTable(tableName);
+      }
+
       const conditionEndIndex = command.lastIndexOf('=');
       const conditionValueStartIndex = command.indexOf('=') + 1;
 
@@ -94,7 +102,7 @@ async function executeCommand(command) {
 
       const element = commandParts[1];
 
-      switch (element) {
+      switch (element.toUpperCase()) {
         case 'DATABASE':
 
         return await dropDb(commandParts[2].trim());

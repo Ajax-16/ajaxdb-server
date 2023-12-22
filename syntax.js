@@ -5,102 +5,146 @@ export function verifySyntax(command) {
     const commandParts = command.split(' ');
     const action = commandParts[0];
 
-    switch(action.toUpperCase()) {
+    switch (action.toUpperCase()) {
 
-    case 'INIT':
-        const databaseName = commandParts[1];
-        const dbIsNumber = parseInt(databaseName);
-        if(!isNaN(dbIsNumber)){
-            execError('Invalid database name -> ' + databaseName);
-        }
-        if(commandParts.length > 2) {
-            execError('1 argument expected (database name) but got: ' + (commandParts.length - 1).toString());
-        }
-        return command;
-
-    case 'DROP':
-
-        const dropElement = commandParts[1];
-
-        if(commandParts.length > 3) {
-            execError('2 argument expected (database or table name) but got: ' + (commandParts.length - 1).toString());
-        }
-
-        switch(dropElement) {
-            case 'DATABASE':
-            case 'TABLE':
-        
+        case 'INIT':
+            const databaseName = commandParts[1];
+            const dbIsNumber = parseInt(databaseName);
+            if (!isNaN(dbIsNumber)) {
+                execError('Invalid database name -> ' + databaseName);
+            }
+            if (commandParts.length > 2) {
+                execError('1 argument expected (database name) but got: ' + (commandParts.length - 1).toString());
+            }
             return command;
 
-            default:
-                execError('Element: ' + dropElement + ' does not support the DROP command.');
-        }
+        case 'DROP':
 
-    case 'CREATE':
+            const dropElement = commandParts[1];
 
-    const createElement = commandParts[1];
+            if (commandParts.length < 2) {
+                execError('Not enough arguments for the DROP command.');
+            }
 
-    switch(createElement){
-        case 'TABLE':
+            if (commandParts.length > 3) {
+                execError('2 arguments expected (database or table name) but got: ' + (commandParts.length - 1).toString());
+            }
+
+            console.log(typeof dropElement);
+
+            switch (dropElement.toUpperCase()) {
+                case 'DATABASE':
+                case 'TABLE':
+                    return command;
+
+                default:
+                    execError('Element: ' + dropElement + ' does not support the DROP command.');
+            }
+
+        case 'CREATE':
+
+            const createElement = commandParts[1];
+
+            switch (createElement.toUpperCase()) {
+                case 'TABLE':
+
+                    break;
+
+                default:
+                    execError('Element: ' + createElement + ' does not support the CREATE command.');
+            }
+
+            const tableName = commandParts[1];
+            const tableIsNumber = parseInt(tableName);
+            if (!isNaN(tableIsNumber)) {
+                execError('Invalid table name -> ' + tableName);
+            }
+
+            if (!filterCaracters(command, "(", 1) || !filterCaracters(command, ")", 1)) {
+                execError('Too many "(" or ")" characters in the command');
+            }
+
+            const createColumnsStartIndex = command.indexOf('(');
+            const createColumnsEndIndex = command.indexOf(')');
+
+            if (createColumnsStartIndex > createColumnsEndIndex || (createColumnsStartIndex === -1 || createColumnsEndIndex === -1)) {
+                execError('Column parameters on invalid format');
+            }
+
+            if (command.trim().length - createColumnsEndIndex !== 1) {
+                execError('Invalid final section');
+            }
+
+            const columns = cleanColumns(command
+                .substring(createColumnsStartIndex + 1, createColumnsEndIndex));
+
+            columns.forEach((column, index) => {
+                const words = column.trim().split(' ');
+
+                if (words.length > 1) {
+                    const modifier = words[1];
+
+                    if (modifier == 'as') {
+                        const modValue = words[2];
+
+                        if (modValue != 'PRIMARY_KEY') {
+                            execError('Unknown modifier value ' + modValue);
+                        }
+                    } else {
+                        execError(modifier + ' is not a valid modifier');
+                    }
+                } else if (words.length >= 4) {
+                    execError('Too many words in column ' + (index + 1).toString());
+                }
+            });
+
+            return command;
+
+        case 'INSERT':
+
+            const insertBridge = commandParts[1];
+
+            if (insertBridge.toUpperCase() !== 'INTO') {
+                execError('Invalid bridge name: ' + insertBridge);
+            }
+
+            if (!filterCaracters(command, "(", 1) || !filterCaracters(command, ")", 1)) {
+                execError('Too many "(" or ")" characters in the command');
+            }
+
+            const insertColumnsStartIndex = command.indexOf('(');
+            const insertColumnsEndIndex = command.indexOf(')');
+
+            if (insertColumnsStartIndex > insertColumnsEndIndex || (insertColumnsStartIndex === -1 || insertColumnsEndIndex === -1)) {
+                execError('Column parameters on invalid format');
+            }
+
+            if (command.trim().length - insertColumnsEndIndex !== 1) {
+                execError('Invalid final section');
+            }
+
+            return command;
+
+        case 'FIND':
+
+        const regex = /^FIND IN [\p{L}\d]+(?: WHERE [\p{L}\d]+ = ['"]?[\p{L}\d]+['"]?)?$/ui;
         
-        break;
+        // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
+
+        if(!regex.test(command)){
+            execError('Invalid formate for finding command. Try something like "FIND IN table WHERE condition = conditionValue"');
+        }
+        
+        return command;
+
+        case 'DESCRIBE':
+        case 'DELETE':
+        case 'UPDATE':
+
+            return command;
 
         default:
-            execError('Element: ' + createElement + ' does not support the CREATE command.');
-    }
-    
-    const tableName = commandParts[1];
-    const tableIsNumber = parseInt(tableName);
-    if(!isNaN(tableIsNumber)){
-        execError('Invalid table name -> ' + tableName);
-    }
-
-    if(!filterCaracters(command, "(", 1) || !filterCaracters(command, ")", 1)) {
-        execError('Too many "(" or ")" characters in the command');
-    }
-
-    const columnsStartIndex = command.indexOf('(');
-    const columnsEndIndex = command.indexOf(')');
-
-    if(columnsStartIndex > columnsEndIndex || (columnsStartIndex === -1 || columnsEndIndex === -1)) {
-        execError('Column parameters on invalid format');
-    }
-
-    const columns = cleanColumns(command
-    .substring(columnsStartIndex + 1, columnsEndIndex));
-
-    columns.forEach((column, index) => {
-        const words = column.trim().split(' ');
-    
-        if (words.length > 1) {
-            const modifier = words[1];
-    
-            if (modifier == 'as') {
-                const modValue = words[2];
-    
-                if (modValue != 'PRIMARY_KEY') {
-                    execError('Unknown modifier value ' + modValue);
-                }
-            } else {
-                execError(modifier + ' is not a valid modifier');
-            }
-        } else if(words.length >= 4){
-            execError('Too many words in column ' + (index + 1).toString());
-        }
-    });
-    
-    return command;
-
-    case 'FIND':
-    case 'INSERT':
-    case 'SHOW':
-    case 'DELETE':
-    case 'UPDATE':
-        
-    return command;
-
-    default: 
-    execError('Invalid command action: "' + action + '"')
+            execError('Invalid command action: "' + action + '"')
     }
 
 }
