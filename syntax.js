@@ -1,4 +1,4 @@
-import { countCaracters, filterCaracters } from "./utils.js";
+import { cleanColumns, countCaracters, filterCaracters } from "./utils.js";
 
 export function verifySyntax(command) {
 
@@ -66,7 +66,8 @@ export function verifySyntax(command) {
         execError('Column parameters on invalid format');
     }
 
-    const columns = command.substring(columnsStartIndex + 1, columnsEndIndex).split(',');
+    const columns = cleanColumns(command
+    .substring(columnsStartIndex + 1, columnsEndIndex));
 
     columns.forEach((column, index) => {
         const words = column.trim().split(' ');
@@ -74,10 +75,10 @@ export function verifySyntax(command) {
         if (words.length > 1) {
             const modifier = words[1];
     
-            if (modifier === 'as') {
+            if (modifier == 'as') {
                 const modValue = words[2];
     
-                if (modValue !== 'PRIMARY_KEY') {
+                if (modValue != 'PRIMARY_KEY') {
                     execError('Unknown modifier value ' + modValue);
                 }
             } else {

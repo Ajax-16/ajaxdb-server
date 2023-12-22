@@ -1,6 +1,7 @@
 import net from 'net';
 import { DB, dropDb } from 'ajax16-db';
 import { verifySyntax } from './syntax.js';
+import { cleanColumns } from './utils.js';
 
 const PORT = 3000;
 
@@ -49,11 +50,14 @@ async function executeCommand(command) {
       const columnsStartIndex = command.indexOf('(');
       const columnsEndIndex = command.lastIndexOf(')');
       let primaryKey = 'id';
-      const columns = command.substring(columnsStartIndex + 1, columnsEndIndex).split(',').map(col => col.trim());
-      const searchPrimaryKey = command.substring(columnsStartIndex + 1, columnsEndIndex).split(',');
+      
+      const columns = cleanColumns(command.substring(columnsStartIndex + 1, columnsEndIndex));
+
+      const searchPrimaryKey = cleanColumns(command.substring(columnsStartIndex + 1, columnsEndIndex));
+
       searchPrimaryKey.forEach(element => {
-        if (element.split(' ')[2] === 'PRIMARY_KEY') {
-          primaryKey = element.split(' ')[0];
+        if (element.trim().split(' ')[2] === 'PRIMARY_KEY') {
+          primaryKey = element.trim().split(' ')[0];
           columns.splice(columns.indexOf(element), 1);
         }
       });

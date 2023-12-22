@@ -18,3 +18,13 @@ export function filterCaracters(string, caracter, limit) {
     if(numCaracters === 0) return true;
     return numCaracters === limit;
 }
+
+export function cleanColumns(columns) {
+    return columns
+    .replace(/\s+/g, ' ')
+    .replace(/,\s*/g, ',')
+    .replace(/\(\s*/g, '(')
+    .replace(/\s*\)/g, ')')
+    .trim()
+    .split(','); 
+}
