@@ -1,5 +1,5 @@
 import net from 'net';
-import { DB, dropDb } from 'ajax16-db';
+import { DB, dropDb, describeDatabase } from 'ajax16-db';
 import { verifySyntax } from './syntax.js';
 import { cleanColumns } from './utils.js';
 
@@ -8,7 +8,6 @@ const PORT = 3000;
 let currentDB = 'placeholder';
 
 const server = net.createServer(async (socket) => {
-  console.log('Client connected');
 
   socket.on('data', async (data) => {
     const command = data.toString().trim();
@@ -23,7 +22,6 @@ const server = net.createServer(async (socket) => {
   });
 
   socket.on('end', () => {
-    console.log('Client disconnected');
   });
 });
 
@@ -50,7 +48,7 @@ async function executeCommand(command) {
       const columnsStartIndex = command.indexOf('(');
       const columnsEndIndex = command.lastIndexOf(')');
       let primaryKey = 'id';
-      
+
       const columns = cleanColumns(command.substring(columnsStartIndex + 1, columnsEndIndex));
 
       const searchPrimaryKey = cleanColumns(command.substring(columnsStartIndex + 1, columnsEndIndex));
@@ -86,7 +84,7 @@ async function executeCommand(command) {
 
       const conditionStartIndex = command.indexOf(where) + 6;
 
-      if(conditionStartIndex === 5) { // Si no existe, devuelve -1, por eso, si no existe conditionStartIndex será 5 (6-1)
+      if (conditionStartIndex === 5) { // Si no existe, devuelve -1, por eso, si no existe conditionStartIndex será 5 (6-1)
         return await currentDB.showOneTable(tableName);
       }
 
@@ -98,23 +96,57 @@ async function executeCommand(command) {
 
       return await currentDB.find({ tableName, condition, conditionValue });
 
-    case 'DROP':
+    case 'DESCRIBE':
 
-      const element = commandParts[1];
+      const describeElement = commandParts[1];
 
-      switch (element.toUpperCase()) {
-        case 'DATABASE':
-
-        return await dropDb(commandParts[2].trim());
+      switch (describeElement.toUpperCase()) {
 
         case 'TABLE':
           if (!(currentDB instanceof DB)) {
             throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
           }
 
-        return await currentDB.dropTable(commandParts[2].trim());
+          return await currentDB.describeOneTable(commandParts[2].trim());
+
+        case 'DATABASE':
+
+          return await describeDatabase(currentDB, commandParts[2].trim())
 
       }
+
+    case 'DROP':
+
+      const dropElement = commandParts[1];
+
+      switch (dropElement.toUpperCase()) {
+        case 'DATABASE':
+
+          return await dropDb(commandParts[2].trim());
+
+        case 'TABLE':
+          if (!(currentDB instanceof DB)) {
+            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+          }
+
+          return await currentDB.dropTable(commandParts[2].trim());
+
+      }
+
+    case 'DELETE':
+    if (!(currentDB instanceof DB)) {
+      throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+    }
+
+    const deleteTableName = commandParts[2];
+    const deleteCondition = commandParts[4];
+    const deleteConditionValue = clean(commandParts[6]);
+
+    return await currentDB.delete({ tableName: deleteTableName, condition: deleteCondition, conditionValue: deleteConditionValue });
+
+    default:
+
+      throw new Error('Invalid command action');
 
   }
 }

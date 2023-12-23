@@ -125,18 +125,47 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-        const regex = /^FIND IN [\p{L}\d]+(?: WHERE [\p{L}\d]+ = ['"]?[\p{L}\d]+['"]?)?$/ui;
+        const findRegex = /^FIND IN [\p{L}\d]+(?: WHERE [\p{L}\d]+ = ['"]?[\p{L}\d]+['"]?)?$/ui;
         
         // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
 
-        if(!regex.test(command)){
-            execError('Invalid formate for finding command. Try something like "FIND IN table WHERE condition = conditionValue"');
+        if(!findRegex.test(command)){
+            execError('Invalid formate for finding command');
         }
         
         return command;
 
         case 'DESCRIBE':
+
+        const describeElement = commandParts[1];
+
+            if (commandParts.length < 2) {
+                execError('Not enough arguments for the DESCRIBE command.');
+            }
+
+            if (commandParts.length > 3) {
+                execError('2 arguments expected (database or table name) but got: ' + (commandParts.length - 1).toString());
+            }
+
+            switch (describeElement.toUpperCase()) {
+                case 'DATABASE':
+                case 'TABLE':
+                    return command;
+
+                default:
+                    execError('Element: ' + describeElement + ' does not support the DESCRIBE command.');
+            }
+
         case 'DELETE':
+
+        const deleteRegex = /^DELETE FROM [\p{L}\d]+ WHERE [\p{L}\d]+ = ['"]?[\p{L}\d]+['"]?$/ui;
+
+        if(!deleteRegex.test(command)){
+            execError('Invalid formate for delete command');
+        }
+        
+        return command;
+
         case 'UPDATE':
 
             return command;
