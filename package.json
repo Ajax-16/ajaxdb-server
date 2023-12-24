@@ -1,18 +1,19 @@
 {
-  "name": "ajaxdb",
+  "name": "js_db_server",
   "version": "1.0.0",
-  "description": "Not-Object-based JS database management system",
-  "main": "index.js",
+  "description": "Non-Object based JS database manager server",
+  "main": "server.js",
   "scripts": {
-    "start": "nodemon --watch ./ -e js,json index.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "keywords": [],
-  "author": "David Bernárdez Luque",
+  "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
-    "ajax16-db": "^1.0.8-3",
+    "ajaxdb-core": "^1.0.8-3",
     "socket.io": "^4.7.2",
     "url": "^0.11.3"
-  }
+  },
+  "type": "module"
 }

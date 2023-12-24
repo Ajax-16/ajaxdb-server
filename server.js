@@ -1,5 +1,5 @@
 import net from 'net';
-import { DB, dropDb, describeDatabase } from 'ajax16-db';
+import { DB, dropDb, describeDatabase } from 'ajaxdb-core';
 import { verifySyntax } from './syntax.js';
 import { cleanColumns } from './utils.js';
 
