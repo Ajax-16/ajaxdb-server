@@ -125,7 +125,7 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-        const findRegex = /^FIND IN [\p{L}\d]+(?: WHERE [\p{L}\d]+ = ['"]?[\p{L}\d]+['"]?)?$/ui;
+        const findRegex = /^FIND IN \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?$/ui;
         
         // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
 
@@ -158,15 +158,22 @@ export function verifySyntax(command) {
 
         case 'DELETE':
 
-        const deleteRegex = /^DELETE FROM [\p{L}\d]+ WHERE [\p{L}\d]+ = ['"]?[\p{L}\d]+['"]?$/ui;
+        const deleteRegex = /^DELETE FROM \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?$/ui;
 
         if(!deleteRegex.test(command)){
-            execError('Invalid formate for delete command');
+            execError('Invalid format for delete command');
         }
         
         return command;
 
         case 'UPDATE':
+
+            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
+
+
+            if(!updateRegex.test(command)){
+                execError('Invalid format for update command');
+            }
 
             return command;
 

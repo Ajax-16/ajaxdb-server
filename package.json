@@ -11,7 +11,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "ajax16-db": "^1.0.8-2",
+    "ajax16-db": "^1.0.8-3",
     "socket.io": "^4.7.2",
     "url": "^0.11.3"
   }

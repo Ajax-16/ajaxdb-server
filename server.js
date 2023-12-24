@@ -133,16 +133,63 @@ async function executeCommand(command) {
 
       }
 
-    case 'DELETE':
-    if (!(currentDB instanceof DB)) {
-      throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
-    }
+      case 'DELETE':
+        if (!(currentDB instanceof DB)) {
+          throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+        }
+      
+        const deleteTableName = commandParts[2];
+        const deleteWhere = commandParts[3];
+      
+        const deleteConditionStartIndex = command.indexOf(deleteWhere) + deleteWhere.length + 1;
+      
+        if (deleteConditionStartIndex === deleteWhere.length) {
+          return await currentDB.showOneTable(deleteTableName);
+        }
+      
+        const deleteConditionEndIndex = command.lastIndexOf('=');
+        const deleteConditionValueStartIndex = command.indexOf('=') + 1;
+      
+        const deleteCondition = command.substring(deleteConditionStartIndex, deleteConditionEndIndex).trim();
+        const deleteConditionValue = clean(command.substring(deleteConditionValueStartIndex).trim());
+      
+        return await currentDB.delete({ tableName: deleteTableName, condition: deleteCondition, conditionValue: deleteConditionValue });
+      
 
-    const deleteTableName = commandParts[2];
-    const deleteCondition = commandParts[4];
-    const deleteConditionValue = clean(commandParts[6]);
+      case 'UPDATE':
+        if (!(currentDB instanceof DB)) {
+          throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+        }
+        const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
 
-    return await currentDB.delete({ tableName: deleteTableName, condition: deleteCondition, conditionValue: deleteConditionValue });
+        const match = command.match(updateRegex);
+    
+          const updateTableName = match[1];
+          const setClause = match[2];
+          const updateConditionClause = match[3];
+      
+          const setArray = setClause.split(',').map(entry => {
+              return entry.split('=').shift().trim()
+          });
+
+          let setValuesArray = setClause.split(',').map(entry => {
+            return clean(entry.split('=').pop().trim())
+          });
+
+          setValuesArray = setValuesArray.map(value => clean(value));
+    
+          const updateCondition = updateConditionClause.split('=').shift().trim();
+
+          const updateConditionValue = updateConditionClause.split('=').pop().trim();
+
+          return await currentDB.update({
+            tableName: updateTableName,
+            set: setArray,
+            setValues: setValuesArray,
+            condition: updateCondition,
+            conditionValue: clean(updateConditionValue)
+          });
+
 
     default:
 
@@ -155,12 +202,14 @@ server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
 
-function clean(string) {
-  if ((string.startsWith("'") && string.endsWith("'")) ||
-    (string.startsWith('"') && string.endsWith('"'))) {
-    return string.substring(1, string.length - 1);
+function clean(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
+    return value.substring(1, value.length - 1);
   } else {
-    const parsedValue = parseFloat(string);
-    return isNaN(parsedValue) ? string : parsedValue;
+    const parsedValue = parseFloat(value);
+    return !isNaN(parsedValue) ? parsedValue : value;
   }
 }
