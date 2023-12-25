@@ -10,6 +10,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ajax-16/JS_DB_SERVER.git"
+  },
   "dependencies": {
     "ajaxdb-core": "^1.0.8-3",
     "socket.io": "^4.7.2",
