@@ -125,7 +125,7 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-        const findRegex = /^FIND IN \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?$/ui;
+        const findRegex = /^FIND IN \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?(?: LIMIT \d+)?$/ui;
         
         // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
 

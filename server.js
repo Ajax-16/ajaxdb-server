@@ -75,26 +75,30 @@ async function executeCommand(command) {
         });
       return await currentDB.insert({ tableName, values });
 
-    case 'FIND':
-      if (!(currentDB instanceof DB)) {
-        throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
-      }
+      case 'FIND':
+        if (!(currentDB instanceof DB)) {
+          throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+        }
+      
+        const where = commandParts[3];
+        const limitMatch = command.match(/LIMIT (\d+)/i);
+        const limit = limitMatch ? parseInt(limitMatch[1]) : undefined;
+      
+        const conditionStartIndex = command.indexOf(where) + 6;
+      
+        if (conditionStartIndex === 5) { // Si no existe, devuelve -1, por eso, si no existe conditionStartIndex será 5 (6-1)
+          return await currentDB.showOneTable(tableName);
+        }
+      
+        const conditionEndIndex = command.lastIndexOf('=');
+        const conditionValueStartIndex = command.indexOf('=') + 1;
+        const limitIndex = command.search(/LIMIT/i);
+        const conditionValueEndIndex = limitIndex !== -1 ? limitIndex : command.length;
+      
+        const condition = command.substring(conditionStartIndex, conditionEndIndex).trim();
+        const conditionValue = clean(command.substring(conditionValueStartIndex, conditionValueEndIndex).trim());
 
-      const where = commandParts[3]
-
-      const conditionStartIndex = command.indexOf(where) + 6;
-
-      if (conditionStartIndex === 5) { // Si no existe, devuelve -1, por eso, si no existe conditionStartIndex será 5 (6-1)
-        return await currentDB.showOneTable(tableName);
-      }
-
-      const conditionEndIndex = command.lastIndexOf('=');
-      const conditionValueStartIndex = command.indexOf('=') + 1;
-
-      const condition = command.substring(conditionStartIndex, conditionEndIndex).trim();
-      const conditionValue = clean(command.substring(conditionValueStartIndex, command.length).trim());
-
-      return await currentDB.find({ tableName, condition, conditionValue });
+        return await currentDB.find({ tableName, condition, conditionValue, limit });
 
     case 'DESCRIBE':
 
