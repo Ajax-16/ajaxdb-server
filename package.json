@@ -1,6 +1,6 @@
 {
   "name": "ajaxdb-server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Non-Object based JS database manager server",
   "main": "server.js",
   "scripts": {

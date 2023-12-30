@@ -188,39 +188,49 @@ async function executeCommand(command) {
       return await currentDB.delete({ tableName: deleteTableName, condition: deleteCondition, conditionValue: deleteConditionValue });
 
 
-    case 'UPDATE':
-      if (!(currentDB instanceof DB)) {
-        throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
-      }
-      const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
-
-      const match = command.match(updateRegex);
-
-      const updateTableName = match[1];
-      const setClause = match[2];
-      const updateConditionClause = match[3];
-
-      const setArray = setClause.split(',').map(entry => {
-        return entry.split('=').shift().trim()
-      });
-
-      let setValuesArray = setClause.split(',').map(entry => {
-        return clean(entry.split('=').pop().trim())
-      });
-
-      setValuesArray = setValuesArray.map(value => clean(value));
-
-      const updateCondition = updateConditionClause.split('=').shift().trim();
-
-      const updateConditionValue = updateConditionClause.split('=').pop().trim();
-
-      return await currentDB.update({
-        tableName: updateTableName,
-        set: setArray,
-        setValues: setValuesArray,
-        condition: updateCondition,
-        conditionValue: clean(updateConditionValue)
-      });
+      case 'UPDATE':
+        if (!(currentDB instanceof DB)) {
+            throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+        }
+    
+        const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
+    
+        const match = command.match(updateRegex);
+    
+        if (!match) {
+            throw new Error('Invalid UPDATE command format.');
+        }
+    
+        const updateTableName = match[1];
+        const setClause = match[2];
+        const updateConditionClause = match[3];
+    
+        // Parse SET clause
+        const setKeyValuePairs = setClause.match(/\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)/g) || [];
+        const setArray = setKeyValuePairs.map(entry => entry.split('=').shift().trim());
+        const setValuesArray = setKeyValuePairs.map(entry => clean(entry.split('=').pop().trim()));
+    
+        // Apply additional cleaning for SET values
+        const cleanedSetValuesArray = setValuesArray.map(value => {
+            if (/^['"]/.test(value) && /['"]$/.test(value)) {
+                return value.slice(1, -1).replace(/\\(["'])/g, "$1");
+            } else {
+                return value;
+            }
+        });
+    
+        // Parse WHERE condition
+        const updateCondition = updateConditionClause.split('=').shift().trim();
+        const updateConditionValue = clean(updateConditionClause.split('=').pop().trim());
+    
+        // Perform the update operation
+        return await currentDB.update({
+            tableName: updateTableName,
+            set: setArray,
+            setValues: cleanedSetValuesArray,
+            condition: updateCondition,
+            conditionValue: updateConditionValue
+        });
 
 
     default:
