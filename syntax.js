@@ -100,44 +100,33 @@ export function verifySyntax(command) {
 
         case 'INSERT':
 
-            const insertBridge = commandParts[1];
+        const regex = /INSERT\s+INTO\s+\w+\s*\(\s*((?:(['"])(?:(?:(?!\2)[^\\]|\\.)*)\2|[^'",]+)\s*(?:,\s*(?:(['"])(?:(?:(?!\3)[^\\]|\\.)*)\3|[^'",]+)\s*)*)\)/i;
 
-            if (insertBridge.toUpperCase() !== 'INTO') {
-                execError('Invalid bridge name: ' + insertBridge);
+            const match = command.match(regex);
+
+            if (match) {
+                
+                return command;
+
+            } else {
+                execError('INSERT command has an unexpected format.');
             }
 
-            if (!filterCaracters(command, "(", 1) || !filterCaracters(command, ")", 1)) {
-                execError('Too many "(" or ")" characters in the command');
-            }
+        case 'FIND':
 
-            const insertColumnsStartIndex = command.indexOf('(');
-            const insertColumnsEndIndex = command.indexOf(')');
+            const findRegex = /^FIND IN \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?(?: LIMIT \d+)?$/ui;
 
-            if (insertColumnsStartIndex > insertColumnsEndIndex || (insertColumnsStartIndex === -1 || insertColumnsEndIndex === -1)) {
-                execError('Column parameters on invalid format');
-            }
+            // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
 
-            if (command.trim().length - insertColumnsEndIndex !== 1) {
-                execError('Invalid final section');
+            if (!findRegex.test(command)) {
+                execError('Invalid formate for finding command');
             }
 
             return command;
 
-        case 'FIND':
-
-        const findRegex = /^FIND IN \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?(?: LIMIT \d+)?$/ui;
-        
-        // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
-
-        if(!findRegex.test(command)){
-            execError('Invalid formate for finding command');
-        }
-        
-        return command;
-
         case 'DESCRIBE':
 
-        const describeElement = commandParts[1];
+            const describeElement = commandParts[1];
 
             if (commandParts.length < 2) {
                 execError('Not enough arguments for the DESCRIBE command.');
@@ -158,20 +147,20 @@ export function verifySyntax(command) {
 
         case 'DELETE':
 
-        const deleteRegex = /^DELETE FROM \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?$/ui;
+            const deleteRegex = /^DELETE FROM \w+(?: WHERE \w+ = ['"]?[\w\s]+['"]?)?$/ui;
 
-        if(!deleteRegex.test(command)){
-            execError('Invalid format for delete command');
-        }
-        
-        return command;
+            if (!deleteRegex.test(command)) {
+                execError('Invalid format for delete command');
+            }
+
+            return command;
 
         case 'UPDATE':
 
             const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
 
 
-            if(!updateRegex.test(command)){
+            if (!updateRegex.test(command)) {
                 execError('Invalid format for update command');
             }
 

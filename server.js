@@ -65,42 +65,68 @@ async function executeCommand(command) {
       if (!(currentDB instanceof DB)) {
         throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
       }
-      const valuesStartIndex = command.indexOf('(') + 1;
-      const valuesEndIndex = command.lastIndexOf(')');
-      const values = command.substring(valuesStartIndex, valuesEndIndex)
-        .split(',')
-        .map(val => {
-          const trimmedValue = val.trim();
-          return clean(trimmedValue);
-        });
-      return await currentDB.insert({ tableName, values });
 
-      case 'FIND':
-  if (!(currentDB instanceof DB)) {
-    throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
-  }
+      const regex = /INSERT\s+INTO\s+\w+\s*\(\s*((?:(['"])(?:(?:(?!\2)[^\\]|\\.)*)\2|[^'",]+)\s*(?:,\s*(?:(['"])(?:(?:(?!\3)[^\\]|\\.)*)\3|[^'",]+)\s*)*)\)/i;
 
-  const where = commandParts[3];
-  const limitMatch = command.match(/LIMIT (\d+)/i);
-  const limit = limitMatch ? parseInt(limitMatch[1]) : undefined;
+      const insertMatch = command.match(regex);
 
-  const conditionStartIndex = command.indexOf(where) + 6;
+      let cleanedParams = [];
 
-  if (conditionStartIndex === 5) {
-    return await currentDB.showOneTable(tableName);
-  }
+      if (insertMatch) {
+        const paramsText = insertMatch[1];
 
-  const conditionMatch = command.match(/WHERE\s+(.+?)\s*=\s*('[^']*'|\b[^' ]+\b)/i);
+        let currentParam = '';
+        let inQuote = false;
 
-  if (!conditionMatch) {
-    throw new Error('Invalid FIND command format.');
-  }
+        for (let char of paramsText) {
+          if (char === "'" || char === '"') {
+            inQuote = !inQuote;
+            currentParam += char;
+          } else if (char === ',' && !inQuote) {
+            cleanedParams.push(currentParam.trim());
+            currentParam = '';
+          } else {
+            currentParam += char;
+          }
+        }
 
-  const condition = conditionMatch[1];
-  const conditionValue = conditionMatch[2];
-  const cleanConditionValue = clean(conditionValue);
+        if (currentParam.trim() !== '') {
+          cleanedParams.push(currentParam.trim());
+        }
+      }
 
-  return await currentDB.find({ tableName, condition, conditionValue: cleanConditionValue, limit });
+      cleanedParams = cleanedParams.map(element => {
+        return clean(element);
+      })
+
+      return await currentDB.insert({ tableName, values: cleanedParams });
+
+    case 'FIND':
+      if (!(currentDB instanceof DB)) {
+        throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+      }
+
+      const where = commandParts[3];
+      const limitMatch = command.match(/LIMIT (\d+)/i);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : undefined;
+
+      const conditionStartIndex = command.indexOf(where) + 6;
+
+      if (conditionStartIndex === 5) {
+        return await currentDB.showOneTable(tableName);
+      }
+
+      const conditionMatch = command.match(/WHERE\s+(.+?)\s*=\s*('[^']*'|\b[^' ]+\b)/i);
+
+      if (!conditionMatch) {
+        throw new Error('Invalid FIND command format.');
+      }
+
+      const condition = conditionMatch[1];
+      const conditionValue = conditionMatch[2];
+      const cleanConditionValue = clean(conditionValue);
+
+      return await currentDB.find({ tableName, condition, conditionValue: cleanConditionValue, limit });
 
     case 'DESCRIBE':
 
@@ -139,62 +165,62 @@ async function executeCommand(command) {
 
       }
 
-      case 'DELETE':
-        if (!(currentDB instanceof DB)) {
-          throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
-        }
-      
-        const deleteTableName = commandParts[2];
-        const deleteWhere = commandParts[3];
-      
-        const deleteConditionStartIndex = command.indexOf(deleteWhere) + deleteWhere.length + 1;
-      
-        if (deleteConditionStartIndex === deleteWhere.length) {
-          return await currentDB.showOneTable(deleteTableName);
-        }
-      
-        const deleteConditionEndIndex = command.lastIndexOf('=');
-        const deleteConditionValueStartIndex = command.indexOf('=') + 1;
-      
-        const deleteCondition = command.substring(deleteConditionStartIndex, deleteConditionEndIndex).trim();
-        const deleteConditionValue = clean(command.substring(deleteConditionValueStartIndex).trim());
-      
-        return await currentDB.delete({ tableName: deleteTableName, condition: deleteCondition, conditionValue: deleteConditionValue });
-      
+    case 'DELETE':
+      if (!(currentDB instanceof DB)) {
+        throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+      }
 
-      case 'UPDATE':
-        if (!(currentDB instanceof DB)) {
-          throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
-        }
-        const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
+      const deleteTableName = commandParts[2];
+      const deleteWhere = commandParts[3];
 
-        const match = command.match(updateRegex);
-    
-          const updateTableName = match[1];
-          const setClause = match[2];
-          const updateConditionClause = match[3];
-      
-          const setArray = setClause.split(',').map(entry => {
-              return entry.split('=').shift().trim()
-          });
+      const deleteConditionStartIndex = command.indexOf(deleteWhere) + deleteWhere.length + 1;
 
-          let setValuesArray = setClause.split(',').map(entry => {
-            return clean(entry.split('=').pop().trim())
-          });
+      if (deleteConditionStartIndex === deleteWhere.length) {
+        return await currentDB.showOneTable(deleteTableName);
+      }
 
-          setValuesArray = setValuesArray.map(value => clean(value));
-    
-          const updateCondition = updateConditionClause.split('=').shift().trim();
+      const deleteConditionEndIndex = command.lastIndexOf('=');
+      const deleteConditionValueStartIndex = command.indexOf('=') + 1;
 
-          const updateConditionValue = updateConditionClause.split('=').pop().trim();
+      const deleteCondition = command.substring(deleteConditionStartIndex, deleteConditionEndIndex).trim();
+      const deleteConditionValue = clean(command.substring(deleteConditionValueStartIndex).trim());
 
-          return await currentDB.update({
-            tableName: updateTableName,
-            set: setArray,
-            setValues: setValuesArray,
-            condition: updateCondition,
-            conditionValue: clean(updateConditionValue)
-          });
+      return await currentDB.delete({ tableName: deleteTableName, condition: deleteCondition, conditionValue: deleteConditionValue });
+
+
+    case 'UPDATE':
+      if (!(currentDB instanceof DB)) {
+        throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+      }
+      const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
+
+      const match = command.match(updateRegex);
+
+      const updateTableName = match[1];
+      const setClause = match[2];
+      const updateConditionClause = match[3];
+
+      const setArray = setClause.split(',').map(entry => {
+        return entry.split('=').shift().trim()
+      });
+
+      let setValuesArray = setClause.split(',').map(entry => {
+        return clean(entry.split('=').pop().trim())
+      });
+
+      setValuesArray = setValuesArray.map(value => clean(value));
+
+      const updateCondition = updateConditionClause.split('=').shift().trim();
+
+      const updateConditionValue = updateConditionClause.split('=').pop().trim();
+
+      return await currentDB.update({
+        tableName: updateTableName,
+        set: setArray,
+        setValues: setValuesArray,
+        condition: updateCondition,
+        conditionValue: clean(updateConditionValue)
+      });
 
 
     default:
