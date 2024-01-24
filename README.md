@@ -1,2 +1,2 @@
-# JS_DB_SERVER
+# ajaxdb-server
 Non-Object based JS database manager server
