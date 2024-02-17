@@ -16,7 +16,7 @@
     "url": "git+https://github.com/Ajax-16/JS_DB_SERVER.git"
   },
   "dependencies": {
-    "ajaxdb-core": "^1.0.2-v2",
+    "ajaxdb-core": "^1.0.3",
     "socket.io": "^4.7.4",
     "url": "^0.11.3"
   },
