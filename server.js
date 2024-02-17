@@ -36,7 +36,7 @@ async function executeCommand(command) {
   switch (action) {
     case 'INIT':
       const dbName = commandParts[1].split(';').shift();
-      currentDB = new DB(dbName);
+      currentDB = new DB(dbName, 4);
       await currentDB.init();
       return `Using database: ${dbName}`;
 

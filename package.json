@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "update": "npx npm-check-updates -u"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +16,7 @@
     "url": "git+https://github.com/Ajax-16/JS_DB_SERVER.git"
   },
   "dependencies": {
-    "ajaxdb-core": "^1.0.12",
+    "ajaxdb-core": "^1.0.2",
     "socket.io": "^4.7.4",
     "url": "^0.11.3"
   },
