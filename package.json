@@ -1,6 +1,6 @@
 {
   "name": "ajaxdb-server",
-  "version": "1.0.5",
+  "version": "1.0.51",
   "description": "Non-Object based JS database manager server",
   "main": "server.js",
   "scripts": {
@@ -13,7 +13,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ajax-16/JS_DB_SERVER.git"
+    "url": "git+https://github.com/Ajax-16/ajaxdb-server.git"
   },
   "dependencies": {
     "ajaxdb-core": "^1.0.3",
