@@ -3,8 +3,8 @@ import { DB, dropDb, describeDatabase } from 'ajaxdb-core';
 import { verifySyntax } from './syntax.js';
 import { cleanColumns } from './utils.js';
 
-const PORT = 3000;
-const CHUNK_SIZE = 1024; // Tamaño máximo de cada fragmento en bytes
+const PORT = process.env.PORT || 3000;
+const CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
 
 let currentDB = 'placeholder';
 
@@ -13,7 +13,12 @@ const server = net.createServer(async (socket) => {
     const command = data.toString().trim();
     try {
       const result = await executeCommand(command);
-      sendLargeResponse(socket, JSON.stringify(result));
+      if (result.length <= CHUNK_SIZE) {
+        socket.write(JSON.stringify(result));
+        socket.write('END_OF_RESPONSE');
+      } else {
+        sendLargeResponse(socket, JSON.stringify(result));
+      }
     } catch (error) {
       console.error('Error executing command:', error.message);
       sendLargeResponse(socket, JSON.stringify({ error: error.message }));
@@ -24,7 +29,6 @@ const server = net.createServer(async (socket) => {
 });
 
 function sendLargeResponse(socket, response) {
-  
   for (let i = 0; i < response.length; i += CHUNK_SIZE) {
     const chunk = response.slice(i, i + CHUNK_SIZE);
     socket.write(chunk);
@@ -32,6 +36,7 @@ function sendLargeResponse(socket, response) {
   // Agrega una marca para indicar que se ha completado la transmisión de datos
   socket.write('END_OF_RESPONSE');
 }
+
 
 async function executeCommand(command) {
 
