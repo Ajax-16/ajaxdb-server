@@ -2,7 +2,7 @@ FROM node:latest
 
 WORKDIR /JS_DB
 
-RUN git clone https://github.com/Ajax-16/JS_DB_SERVER.git .
+RUN git clone https://github.com/Ajax-16/ajaxdb-server.git .
 
 RUN npm install
 
