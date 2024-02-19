@@ -118,8 +118,7 @@ async function executeCommand(command) {
       if (!(currentDB instanceof DB)) {
         throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
       }
-
-      const tableName = commandParts[2];
+      
       let condition, conditionValue, offset, limit;
 
       const whereIndex = command.search(/\bWHERE\b/i);
