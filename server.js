@@ -122,16 +122,16 @@ async function executeCommand(command) {
         let condition, conditionValue, offset, limit;
         let findColumns = [];
     
-        const parts = command.split(/\bIN\b/i);
+        const parts = command.split(/\bIN\b/ui);
         if (parts.length !== 2) {
             throw new Error('Invalid format for finding command');
         }
     
-        const findTableName = parts[1].trim();
+        const findTableName = parts[1].trim().split(" ")[0];
         const findCommand = parts[0].trim();
-        const whereIndex = findCommand.search(/\bWHERE\b/i);
-        const limitIndex = findCommand.search(/\bLIMIT\b/i);
-        const offsetIndex = findCommand.search(/\bOFFSET\b/i);
+        const whereIndex = command.search(/\bWHERE\b/ui);
+        const limitIndex = command.search(/\bLIMIT\b/ui);
+        const offsetIndex = command.search(/\bOFFSET\b/ui);
     
         // Buscar el índice de la palabra clave "IN" para obtener las columnas seleccionadas
         const columnsMatch = findCommand.substring(findCommand.indexOf('FIND') + 5).trim();
@@ -142,24 +142,34 @@ async function executeCommand(command) {
                 findColumns = columnsMatch.split(',').map(column => column.trim());
             }
         }
+
+        console.log(findCommand)
     
         if (whereIndex !== -1) {
-            const conditionMatch = findCommand.match(/WHERE\s+(.+?)\s*=\s*('[^']*'|\b[^' ]+\b)/i);
-            condition = conditionMatch[1];
-            conditionValue = conditionMatch[2];
+            const conditionMatch = command.match(/WHERE\s+(.+?)\s*=\s*('[^']*'|\b[^' ]+\b)/ui);
+            if (conditionMatch) {
+                condition = conditionMatch[1];
+                conditionValue = conditionMatch[2];
+            }
         }
     
         if (offsetIndex !== -1) {
-            const offsetMatch = findCommand.match(/OFFSET\s+(\d+)/i);
-            offset = parseInt(offsetMatch[1]);
+            const offsetMatch = command.match(/OFFSET\s+(\d+)/ui);
+            if (offsetMatch) {
+                offset = parseInt(offsetMatch[1]);
+            }
         }
     
         if (limitIndex !== -1) {
-            const limitMatch = findCommand.match(/LIMIT\s+(\d+)/i);
-            limit = parseInt(limitMatch[1]);
+            const limitMatch = command.match(/LIMIT\s+(\d+)/ui);
+            if (limitMatch) {
+                limit = parseInt(limitMatch[1]);
+            }
         }
     
         const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
+    
+        console.log(findTableName, condition, conditionValue)
         
         if (condition) {
             return await currentDB.find({ tableName: findTableName, columns: findColumns, condition, conditionValue: cleanConditionValue, offset, limit });
