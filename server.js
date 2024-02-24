@@ -114,42 +114,59 @@ async function executeCommand(command) {
 
       return await currentDB.insert({ tableName, values: cleanedParams });
 
-    case 'FIND':
-      if (!(currentDB instanceof DB)) {
-        throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
-      }
-      
-      let condition, conditionValue, offset, limit;
-
-      const whereIndex = command.search(/\bWHERE\b/i);
-      const limitIndex = command.search(/\bLIMIT\b/i);
-      const offsetIndex = command.search(/\bOFFSET\b/i);
-
-      if (whereIndex !== -1) {
-        const conditionMatch = command.match(/WHERE\s+(.+?)\s*=\s*('[^']*'|\b[^' ]+\b)/i);
-        condition = conditionMatch[1];
-        conditionValue = conditionMatch[2];
-      }
-
-      if (offsetIndex !== -1) {
-        const offsetMatch = command.match(/OFFSET\s+(\d+)/i);
-        offset = parseInt(offsetMatch[1]);
-      }
-
-      if (limitIndex !== -1) {
-        const limitMatch = command.match(/LIMIT\s+(\d+)/i);
-        limit = parseInt(limitMatch[1]);
-      }
-
-      const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
-
-      if (condition) {
-        return await currentDB.find({ tableName, condition, conditionValue: cleanConditionValue, offset, limit });
-      } else {
-        return currentDB.showOneTable(tableName, offset, limit);
-      }
-
-
+      case 'FIND':
+        if (!(currentDB instanceof DB)) {
+            throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+        }
+    
+        let condition, conditionValue, offset, limit;
+        let findColumns = [];
+    
+        const parts = command.split(/\bIN\b/i);
+        if (parts.length !== 2) {
+            throw new Error('Invalid format for finding command');
+        }
+    
+        const findTableName = parts[1].trim();
+        const findCommand = parts[0].trim();
+        const whereIndex = findCommand.search(/\bWHERE\b/i);
+        const limitIndex = findCommand.search(/\bLIMIT\b/i);
+        const offsetIndex = findCommand.search(/\bOFFSET\b/i);
+    
+        // Buscar el índice de la palabra clave "IN" para obtener las columnas seleccionadas
+        const columnsMatch = findCommand.substring(findCommand.indexOf('FIND') + 5).trim();
+        if (columnsMatch) {
+            if (columnsMatch === '*') {
+                findColumns = undefined; // Si el valor es "*", no se pasa ninguna columna
+            } else {
+                findColumns = columnsMatch.split(',').map(column => column.trim());
+            }
+        }
+    
+        if (whereIndex !== -1) {
+            const conditionMatch = findCommand.match(/WHERE\s+(.+?)\s*=\s*('[^']*'|\b[^' ]+\b)/i);
+            condition = conditionMatch[1];
+            conditionValue = conditionMatch[2];
+        }
+    
+        if (offsetIndex !== -1) {
+            const offsetMatch = findCommand.match(/OFFSET\s+(\d+)/i);
+            offset = parseInt(offsetMatch[1]);
+        }
+    
+        if (limitIndex !== -1) {
+            const limitMatch = findCommand.match(/LIMIT\s+(\d+)/i);
+            limit = parseInt(limitMatch[1]);
+        }
+    
+        const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
+        
+        if (condition) {
+            return await currentDB.find({ tableName: findTableName, columns: findColumns, condition, conditionValue: cleanConditionValue, offset, limit });
+        } else {
+            return currentDB.showOneTable(findTableName, findColumns, offset, limit);
+        }
+    
     case 'DESCRIBE':
 
       const describeElement = commandParts[1];
