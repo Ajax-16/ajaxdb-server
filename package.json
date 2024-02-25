@@ -4,19 +4,18 @@
   "description": "Non-Object based JS database manager server",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "update": "npx npm-check-updates -u"
+    "update": "ncu -u && npm install"
   },
   "keywords": [],
-  "author": "",
+  "author": "David Bernárdez Luque",
   "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Ajax-16/ajaxdb-server.git"
   },
   "dependencies": {
-    "ajaxdb-core": "^1.0.5-v2-2",
+    "ajaxdb-core": "^1.0.6",
     "socket.io": "^4.7.4",
     "url": "^0.11.3"
   },

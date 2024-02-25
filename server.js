@@ -114,69 +114,74 @@ async function executeCommand(command) {
 
       return await currentDB.insert({ tableName, values: cleanedParams });
 
-      case 'FIND':
-        if (!(currentDB instanceof DB)) {
-            throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
-        }
-    
-        let condition, conditionValue, offset, limit;
-        let findColumns = [];
-    
-        const parts = command.split(/\bIN\b/ui);
-        if (parts.length !== 2) {
-            throw new Error('Invalid format for finding command');
-        }
-    
-        const findTableName = parts[1].trim().split(" ")[0];
-        const findCommand = parts[0].trim();
-        const whereIndex = command.search(/\bWHERE\b/ui);
-        const limitIndex = command.search(/\bLIMIT\b/ui);
-        const offsetIndex = command.search(/\bOFFSET\b/ui);
-    
-        // Buscar el índice de la palabra clave "IN" para obtener las columnas seleccionadas
-        const columnsMatch = findCommand.substring(findCommand.indexOf('FIND') + 5).trim();
-        if (columnsMatch) {
-            if (columnsMatch === '*') {
-                findColumns = undefined; // Si el valor es "*", no se pasa ninguna columna
-            } else {
-                findColumns = columnsMatch.split(',').map(column => column.trim());
-            }
-        }
+    case 'FIND':
+      if (!(currentDB instanceof DB)) {
+        throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+      }
 
-        console.log(findCommand)
-    
-        if (whereIndex !== -1) {
-            const conditionMatch = command.match(/WHERE\s+(.+?)\s*=\s*('[^']*'|\b[^' ]+\b)/ui);
-            if (conditionMatch) {
-                condition = conditionMatch[1];
-                conditionValue = conditionMatch[2];
-            }
-        }
-    
-        if (offsetIndex !== -1) {
-            const offsetMatch = command.match(/OFFSET\s+(\d+)/ui);
-            if (offsetMatch) {
-                offset = parseInt(offsetMatch[1]);
-            }
-        }
-    
-        if (limitIndex !== -1) {
-            const limitMatch = command.match(/LIMIT\s+(\d+)/ui);
-            if (limitMatch) {
-                limit = parseInt(limitMatch[1]);
-            }
-        }
-    
-        const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
-    
-        console.log(findTableName, condition, conditionValue)
-        
-        if (condition) {
-            return await currentDB.find({ tableName: findTableName, columns: findColumns, condition, conditionValue: cleanConditionValue, offset, limit });
+      let condition, findOperator, conditionValue, offset, limit;
+      let findColumns = [];
+
+      const parts = command.split(/\bIN\b/ui);
+      if (parts.length !== 2) {
+        throw new Error('Invalid format for finding command');
+      }
+
+      const findTableName = parts[1].trim().split(" ")[0];
+      const findCommand = parts[0].trim();
+      const whereIndex = command.search(/\bWHERE\b/ui);
+      const limitIndex = command.search(/\bLIMIT\b/ui);
+      const offsetIndex = command.search(/\bOFFSET\b/ui);
+
+      // Buscar el índice de la palabra clave "IN" para obtener las columnas seleccionadas
+      const columnsMatch = findCommand.substring(findCommand.indexOf('FIND') + 5).trim();
+      if (columnsMatch) {
+        if (columnsMatch === '*') {
+          findColumns = undefined; // Si el valor es "*", no se pasa ninguna columna
         } else {
-            return currentDB.showOneTable(findTableName, findColumns, offset, limit);
+          findColumns = columnsMatch.split(',').map(column => column.trim());
         }
-    
+      }
+
+      if (whereIndex !== -1) {
+        const conditionMatch = command.match(/WHERE\s+(.+?)\s*(=|!=|>|<|>=|<=)\s*('[^']*'|\b[^' ]+\b)/ui);
+        if (conditionMatch) {
+          condition = conditionMatch[1];
+          findOperator = conditionMatch[2];
+          conditionValue = conditionMatch[3];
+        }
+      }
+
+      if (offsetIndex !== -1) {
+        const offsetMatch = command.match(/OFFSET\s+(\d+)/ui);
+        if (offsetMatch) {
+          offset = parseInt(offsetMatch[1]);
+        }
+      }
+
+      if (limitIndex !== -1) {
+        const limitMatch = command.match(/LIMIT\s+(\d+)/ui);
+        if (limitMatch) {
+          limit = parseInt(limitMatch[1]);
+        }
+      }
+
+      const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
+
+      if (condition) {
+        return await currentDB.find({
+          tableName: findTableName,
+          columns: findColumns,
+          condition,
+          operator: findOperator,
+          conditionValue: cleanConditionValue,
+          offset,
+          limit
+        });
+      } else {
+        return currentDB.showOneTable(findTableName, findColumns, offset, limit);
+      }
+
     case 'DESCRIBE':
 
       const describeElement = commandParts[1];
@@ -214,27 +219,29 @@ async function executeCommand(command) {
 
       }
 
-    case 'DELETE':
-      if (!(currentDB instanceof DB)) {
-        throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
-      }
-
-      const deleteTableName = commandParts[2];
-      const deleteWhere = commandParts[3];
-
-      const deleteConditionStartIndex = command.indexOf(deleteWhere) + deleteWhere.length + 1;
-
-      if (deleteConditionStartIndex === deleteWhere.length) {
-        return await currentDB.showOneTable(deleteTableName);
-      }
-
-      const deleteConditionEndIndex = command.lastIndexOf('=');
-      const deleteConditionValueStartIndex = command.indexOf('=') + 1;
-
-      const deleteCondition = command.substring(deleteConditionStartIndex, deleteConditionEndIndex).trim();
-      const deleteConditionValue = clean(command.substring(deleteConditionValueStartIndex).trim());
-
-      return await currentDB.delete({ tableName: deleteTableName, condition: deleteCondition, conditionValue: deleteConditionValue });
+      case 'DELETE':
+        if (!(currentDB instanceof DB)) {
+          throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+        }
+      
+        const deleteRegex = /^DELETE FROM (\w+)(?: WHERE (\w+)\s*(=|!=|>|<|>=|<=)\s*(['"]?[\w\s]+['"]?))?$/ui;
+        const deleteMatch = command.match(deleteRegex);
+      
+        const deleteTableName = deleteMatch[1];
+        const deleteWhereField = deleteMatch[2];
+        const operator = deleteMatch[3] || '=';
+        const deleteConditionValue = deleteMatch[4] ? clean(deleteMatch[4]) : undefined;
+      
+        if (!deleteWhereField) {
+          return currentDB.showOneTable(deleteTableName);
+        }
+      
+        return await currentDB.delete({ 
+          tableName: deleteTableName, 
+          condition: deleteWhereField, 
+          operator: operator, 
+          conditionValue: deleteConditionValue 
+        });
 
 
     case 'UPDATE':
@@ -242,7 +249,7 @@ async function executeCommand(command) {
         throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
       }
 
-      const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*\s*)+)\s*WHERE\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))/ui;
+      const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*)\s*WHERE\s+(\w+)\s*(=|!=|>|<|>=|<=)\s*(?:"([^"]*)"|'([^']*)'|([^'",]+))/ui;
 
       const match = command.match(updateRegex);
 
@@ -252,7 +259,16 @@ async function executeCommand(command) {
 
       const updateTableName = match[1];
       const setClause = match[2];
-      const updateConditionClause = match[3];
+      const updateCondition = match[3];
+      const updateOperator = match[4];
+      let updateConditionValue;
+      if (match[5]) {
+        updateConditionValue = clean(match[5]);
+      } else if (match[6]) {
+        updateConditionValue = clean(match[6]);
+      } else if (match[7]) {
+        updateConditionValue = clean(match[7]);
+      }
 
       // Parse SET clause
       const setKeyValuePairs = setClause.match(/\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)/g) || [];
@@ -268,19 +284,15 @@ async function executeCommand(command) {
         }
       });
 
-      // Parse WHERE condition
-      const updateCondition = updateConditionClause.split('=').shift().trim();
-      const updateConditionValue = clean(updateConditionClause.split('=').pop().trim());
-
       // Perform the update operation
       return await currentDB.update({
         tableName: updateTableName,
         set: setArray,
         setValues: cleanedSetValuesArray,
         condition: updateCondition,
+        operator: updateOperator,
         conditionValue: updateConditionValue
       });
-
 
     default:
 
