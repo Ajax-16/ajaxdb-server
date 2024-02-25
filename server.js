@@ -119,7 +119,7 @@ async function executeCommand(command) {
         throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
       }
 
-      let condition, findOperator, conditionValue, offset, limit;
+      let condition, findOperator, conditionValue, offset, limit, distinct;
       let findColumns = [];
 
       const parts = command.split(/\bIN\b/ui);
@@ -128,10 +128,17 @@ async function executeCommand(command) {
       }
 
       const findTableName = parts[1].trim().split(" ")[0];
-      const findCommand = parts[0].trim();
+      let findCommand = parts[0].trim();
       const whereIndex = command.search(/\bWHERE\b/ui);
       const limitIndex = command.search(/\bLIMIT\b/ui);
       const offsetIndex = command.search(/\bOFFSET\b/ui);
+
+      if (findCommand.match(/\bDISTINCT\b/i)) {
+        distinct = true;
+        findCommand = findCommand.replace(/\bDISTINCT\b/i, "").trim();
+      } else {
+        distinct = false;
+      }
 
       // Buscar el índice de la palabra clave "IN" para obtener las columnas seleccionadas
       const columnsMatch = findCommand.substring(findCommand.indexOf('FIND') + 5).trim();
@@ -171,6 +178,7 @@ async function executeCommand(command) {
       if (condition) {
         return await currentDB.find({
           tableName: findTableName,
+          distinct,
           columns: findColumns,
           condition,
           operator: findOperator,
@@ -179,7 +187,7 @@ async function executeCommand(command) {
           limit
         });
       } else {
-        return currentDB.showOneTable(findTableName, findColumns, offset, limit);
+        return await currentDB.showOneTable({tableName: findTableName, distinct, columns: findColumns, offset, limit});
       }
 
     case 'DESCRIBE':
