@@ -314,6 +314,9 @@ server.listen(PORT, () => {
 });
 
 function clean(value) {
+  if(value.toUpperCase() === 'NULL'){
+    return null;
+  }
   if (typeof value !== 'string') {
     return value;
   }
