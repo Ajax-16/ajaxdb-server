@@ -2,9 +2,18 @@ import net from 'net';
 import { DB, dropDb, describeDatabase } from 'ajaxdb-core';
 import { verifySyntax } from './syntax.js';
 import { cleanColumns } from './utils.js';
+import dotenv from 'dotenv';
 
-const PORT = process.env.PORT || 3000;
-const CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
+let PORT, CHUNK_SIZE;
+
+if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
+  PORT = process.env.PORT || 3000;
+  CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
+}else {
+  dotenv.config({path: './.env' || './.env.example'})
+  PORT = process.env.PORT || 3000;
+  CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
+}
 
 let currentDB = 'placeholder';
 
@@ -36,7 +45,6 @@ function sendLargeResponse(socket, response) {
   // Agrega una marca para indicar que se ha completado la transmisión de datos
   socket.write('END_OF_RESPONSE');
 }
-
 
 async function executeCommand(command) {
 
@@ -79,40 +87,36 @@ async function executeCommand(command) {
         throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
       }
 
-      const regex = /INSERT\s+INTO\s+\w+\s*\(\s*((?:(['"])(?:(?:(?!\2)[^\\]|\\.)*)\2|[^'",]+)\s*(?:,\s*(?:(['"])(?:(?:(?!\3)[^\\]|\\.)*)\3|[^'",]+)\s*)*)\)/i;
+      const regex = /INSERT\s+INTO\s+\w+\s*(?:\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*(?:VALUES\s*\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*/ui;
 
       const insertMatch = command.match(regex);
 
-      let cleanedParams = [];
+        const insertColumns = insertMatch[1];
+        const insertValues = insertMatch[2];
 
-      if (insertMatch) {
-        const paramsText = insertMatch[1];
-
-        let currentParam = '';
-        let inQuote = false;
-
-        for (let char of paramsText) {
-          if (char === "'" || char === '"') {
-            inQuote = !inQuote;
-            currentParam += char;
-          } else if (char === ',' && !inQuote) {
-            cleanedParams.push(currentParam.trim());
-            currentParam = '';
-          } else {
-            currentParam += char;
+        const cleanValues = (values) => {
+          const regex = /(?:'([^']+)'|"([^"]+)")|([^,]+)/g;
+          const matches = values.matchAll(regex);
+          const cleanedValues = [];
+          for (const match of matches) {
+            const value = match[0] || match[1] || match[2];
+            cleanedValues.push(clean(value.trim()));
           }
+          return cleanedValues;
+        };
+
+        if(insertValues === undefined) {
+          const valuesIndex = command.search(/\bVALUES\b/ui);
+          if (valuesIndex !== -1) {
+            throw new Error('INSERT command requires a VALUES clause with parameters.');
+          }
+          const cleanedValues = cleanValues(insertColumns);
+          return await currentDB.insert({ tableName, values: cleanedValues });
+        }else {
+          const cleanedColumns = insertColumns.split(',').map(value => clean(value.trim()));
+          const cleanedValues = cleanValues(insertValues);
+          return await currentDB.insert({ tableName, columns: cleanedColumns, values: cleanedValues });
         }
-
-        if (currentParam.trim() !== '') {
-          cleanedParams.push(currentParam.trim());
-        }
-      }
-
-      cleanedParams = cleanedParams.map(element => {
-        return clean(element);
-      })
-
-      return await currentDB.insert({ tableName, values: cleanedParams });
 
     case 'FIND':
       if (!(currentDB instanceof DB)) {

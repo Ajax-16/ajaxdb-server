@@ -1,6 +1,6 @@
 {
   "name": "ajaxdb-server",
-  "version": "1.0.7v2-4",
+  "version": "1.0.7v3",
   "description": "Non-Object based JS database manager server",
   "main": "server.js",
   "scripts": {
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "ajaxdb-core": "^1.0.7-v2",
+    "dotenv": "^16.4.5",
     "socket.io": "^4.7.4",
     "url": "^0.11.3"
   },
