@@ -1,16 +1,17 @@
 import net from 'net';
 import { DB, dropDb, describeDatabase } from 'ajaxdb-core';
-import { verifySyntax } from './syntax.js';
-import { cleanColumns } from './utils.js';
+import { verifySyntax } from './handlers/syntaxHandler.js';
+import { cleanColumns } from './handlers/utils/string.js';
 import dotenv from 'dotenv';
+import { createHttpResponse, getHttpRequest } from './handlers/http/httpHandler.js';
 
 let PORT, CHUNK_SIZE;
 
 if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
   PORT = process.env.PORT || 3000;
   CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
-}else {
-  dotenv.config({path: './.env' || './.env.example'})
+} else {
+  dotenv.config({ path: './.env' || './.env.example' })
   PORT = process.env.PORT || 3000;
   CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
 }
@@ -19,23 +20,46 @@ let currentDB = 'placeholder';
 
 const server = net.createServer(async (socket) => {
   socket.on('data', async (data) => {
-    const command = data.toString().trim();
-    try {
-      const result = await executeCommand(command);
-      if (result.length <= CHUNK_SIZE) {
-        socket.write(JSON.stringify(result));
-        socket.write('END_OF_RESPONSE');
-      } else {
-        sendLargeResponse(socket, JSON.stringify(result));
-      }
-    } catch (error) {
-      console.error('Error executing command:', error.message);
-      sendLargeResponse(socket, JSON.stringify({ error: error.message }));
-    }
-  });
 
-  socket.on('end', () => { });
+    const isHttpRequest = data.toString().includes('HTTP');
+    const isAjxRequest = data.toString().includes('AJX');
+
+    if (isHttpRequest) {
+      await handleHTTP(socket, data);
+    } else if (isAjxRequest) {
+      await handleTCP(socket, data);
+    }
+
+    socket.on('end', () => { });
+  });
 });
+
+async function handleTCP(socket, data) {
+  let command = data.toString().trim();
+  try {
+    command = command.replace(/AJX\r\n\r\n/g, '');
+    const result = await executeCommand(command);
+    if (result.length <= CHUNK_SIZE) {
+      socket.write(JSON.stringify(result));
+      socket.write('END_OF_RESPONSE');
+    } else {
+      sendLargeResponse(socket, JSON.stringify(result));
+    }
+  } catch (error) {
+    console.error('Error executing command:', error.message);
+    sendLargeResponse(socket, JSON.stringify({ error: error.message }));
+  }
+}
+
+async function handleHTTP(socket, data) {
+
+  const request = getHttpRequest(data);
+  
+  const result = await executeCommand(request.body);
+
+  socket.write(createHttpResponse({payload: result, statusCode: 200}));
+
+}
 
 function sendLargeResponse(socket, response) {
   for (let i = 0; i < response.length; i += CHUNK_SIZE) {
@@ -91,32 +115,32 @@ async function executeCommand(command) {
 
       const insertMatch = command.match(regex);
 
-        const insertColumns = insertMatch[1];
-        const insertValues = insertMatch[2];
+      const insertColumns = insertMatch[1];
+      const insertValues = insertMatch[2];
 
-        const cleanValues = (values) => {
-          const regex = /(?:'([^']+)'|"([^"]+)")|([^,]+)/g;
-          const matches = values.matchAll(regex);
-          const cleanedValues = [];
-          for (const match of matches) {
-            const value = match[0] || match[1] || match[2];
-            cleanedValues.push(clean(value.trim()));
-          }
-          return cleanedValues;
-        };
-
-        if(insertValues === undefined) {
-          const valuesIndex = command.search(/\bVALUES\b/ui);
-          if (valuesIndex !== -1) {
-            throw new Error('INSERT command requires a VALUES clause with parameters.');
-          }
-          const cleanedValues = cleanValues(insertColumns);
-          return await currentDB.insert({ tableName, values: cleanedValues });
-        }else {
-          const cleanedColumns = insertColumns.split(',').map(value => clean(value.trim()));
-          const cleanedValues = cleanValues(insertValues);
-          return await currentDB.insert({ tableName, columns: cleanedColumns, values: cleanedValues });
+      const cleanValues = (values) => {
+        const regex = /(?:'([^']+)'|"([^"]+)")|([^,]+)/g;
+        const matches = values.matchAll(regex);
+        const cleanedValues = [];
+        for (const match of matches) {
+          const value = match[0] || match[1] || match[2];
+          cleanedValues.push(clean(value.trim()));
         }
+        return cleanedValues;
+      };
+
+      if (insertValues === undefined) {
+        const valuesIndex = command.search(/\bVALUES\b/ui);
+        if (valuesIndex !== -1) {
+          throw new Error('INSERT command requires a VALUES clause with parameters.');
+        }
+        const cleanedValues = cleanValues(insertColumns);
+        return await currentDB.insert({ tableName, values: cleanedValues });
+      } else {
+        const cleanedColumns = insertColumns.split(',').map(value => clean(value.trim()));
+        const cleanedValues = cleanValues(insertValues);
+        return await currentDB.insert({ tableName, columns: cleanedColumns, values: cleanedValues });
+      }
 
     case 'FIND':
       if (!(currentDB instanceof DB)) {
@@ -191,7 +215,7 @@ async function executeCommand(command) {
           limit
         });
       } else {
-        return await currentDB.showOneTable({tableName: findTableName, distinct, columns: findColumns, offset, limit});
+        return await currentDB.showOneTable({ tableName: findTableName, distinct, columns: findColumns, offset, limit });
       }
 
     case 'DESCRIBE':
@@ -231,29 +255,29 @@ async function executeCommand(command) {
 
       }
 
-      case 'DELETE':
-        if (!(currentDB instanceof DB)) {
-          throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
-        }
-      
-        const deleteRegex = /^DELETE FROM (\w+)(?: WHERE (\w+)\s*(=|!=|>|<|>=|<=)\s*(['"]?[\w\s]+['"]?))?$/ui;
-        const deleteMatch = command.match(deleteRegex);
-      
-        const deleteTableName = deleteMatch[1];
-        const deleteWhereField = deleteMatch[2];
-        const operator = deleteMatch[3] || '=';
-        const deleteConditionValue = deleteMatch[4] ? clean(deleteMatch[4]) : undefined;
-      
-        if (!deleteWhereField) {
-          return currentDB.showOneTable(deleteTableName);
-        }
-      
-        return await currentDB.delete({ 
-          tableName: deleteTableName, 
-          condition: deleteWhereField, 
-          operator: operator, 
-          conditionValue: deleteConditionValue 
-        });
+    case 'DELETE':
+      if (!(currentDB instanceof DB)) {
+        throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+      }
+
+      const deleteRegex = /^DELETE FROM (\w+)(?: WHERE (\w+)\s*(=|!=|>|<|>=|<=)\s*(['"]?[\w\s]+['"]?))?$/ui;
+      const deleteMatch = command.match(deleteRegex);
+
+      const deleteTableName = deleteMatch[1];
+      const deleteWhereField = deleteMatch[2];
+      const operator = deleteMatch[3] || '=';
+      const deleteConditionValue = deleteMatch[4] ? clean(deleteMatch[4]) : undefined;
+
+      if (!deleteWhereField) {
+        return currentDB.showOneTable(deleteTableName);
+      }
+
+      return await currentDB.delete({
+        tableName: deleteTableName,
+        condition: deleteWhereField,
+        operator: operator,
+        conditionValue: deleteConditionValue
+      });
 
 
     case 'UPDATE':
@@ -318,7 +342,7 @@ server.listen(PORT, () => {
 });
 
 function clean(value) {
-  if(value.toUpperCase() === 'NULL'){
+  if (value.toUpperCase() === 'NULL') {
     return null;
   }
   if (typeof value !== 'string') {

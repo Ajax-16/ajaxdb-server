@@ -28,3 +28,8 @@ export function cleanColumns(columns) {
     .trim()
     .split(','); 
 }
+
+export function pascalCaseToCamelCase(input) {
+    const camelCaseString = input.replace(/-/g, '');
+    return camelCaseString.charAt(0).toLowerCase() + camelCaseString.slice(1);
+}

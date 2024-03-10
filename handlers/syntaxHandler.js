@@ -1,4 +1,4 @@
-import { cleanColumns, filterCaracters } from "./utils.js";
+import { cleanColumns, filterCaracters } from "./utils/string.js";
 
 export function verifySyntax(command) {
 
