@@ -96,11 +96,12 @@ export async function router({ method, route = '/', params, body }) {
         throw new Error('No database specified');
     }
 
-    await executeCommand(`INIT ${database}`);
-
     switch (method) {
 
         case 'GET':
+
+            await executeCommand(`INIT ${database}`);
+
             command = 'FIND ';
 
             if (!table) {
@@ -169,6 +170,8 @@ export async function router({ method, route = '/', params, body }) {
                         throw new Error('No name specification for new table');
                     }
 
+                    await executeCommand(`INIT ${database}`);
+
                     command += `CREATE TABLE ${body.name} (${body.primaryKey} as PRIMARY_KEY`
 
                     if(!body.columns) {
@@ -183,6 +186,9 @@ export async function router({ method, route = '/', params, body }) {
 
                 }
             }else {
+
+                await executeCommand(`INIT ${database}`);
+
                 command = `INSERT INTO ${table} (`
 
                 let manyElements = false;
@@ -226,6 +232,8 @@ export async function router({ method, route = '/', params, body }) {
                 throw new Error('Invalid format for PUT method');
                 // TODO: Edición de una tabla (Edición de las columnas de una tabla)
         }else {
+
+            await executeCommand(`INIT ${database}`);
             
             command = `UPDATE ${table} SET `
 
@@ -248,8 +256,6 @@ export async function router({ method, route = '/', params, body }) {
                 throw new Error('No elements selected for updating');
             }
 
-            console.log(command);
-
         }
 
         return command;
@@ -259,6 +265,8 @@ export async function router({ method, route = '/', params, body }) {
         if(!table) {
             command = `DROP DATABASE ${database}`;
         }else {
+
+            await executeCommand(`INIT ${database}`);
             
             command = `DELETE FROM ${table}`
 
@@ -270,12 +278,10 @@ export async function router({ method, route = '/', params, body }) {
             else if(body && body.where) {
                 command += ` WHERE ${body.where}`;
             }else {
-                throw new Error('No elements selected for deleting');
+                command = `DROP TABLE ${table}`;
             }
 
         }
-
-        console.log(command)
 
             return command;
 

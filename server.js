@@ -53,11 +53,17 @@ async function handleHTTP(socket, data) {
 
     const request = getHttpRequest(data);
 
-    const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
+    if(request.route !== '/favicon.ico') {
 
-    const result = await executeCommand(routedRequest);
+      const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
 
-    socket.write(createHttpResponse({ payload: result, statusCode: 200 }));
+      const result = await executeCommand(routedRequest);
+  
+      socket.write(createHttpResponse({ payload: result, statusCode: 200 }));
+    
+    }else {
+      socket.write(createHttpResponse({payload: 'none', statusCode: 400}));
+    }
 
   } catch (error) {
     console.error('Error executing:', error.message);
@@ -70,8 +76,8 @@ function sendLargeResponse(socket, response) {
   for (let i = 0; i < response.length; i += CHUNK_SIZE) {
     const chunk = response.slice(i, i + CHUNK_SIZE);
     socket.write(chunk);
+    
   }
-  // Agrega una marca para indicar que se ha completado la transmisión de datos
   socket.write('END_OF_RESPONSE');
 }
 
