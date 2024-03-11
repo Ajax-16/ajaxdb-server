@@ -1,0 +1,5 @@
+{
+    "name": "tableName",
+    "primaryKey": "optionaNameForPrimaryKey",
+    "columns": ["an", "array", "of", "columns"]
+}

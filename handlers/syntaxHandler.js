@@ -1,4 +1,4 @@
-import { cleanColumns, filterCaracters } from "./utils/string.js";
+import { cleanColumns, filterCaracters } from "../utils/string.js";
 
 export function verifySyntax(command) {
 
@@ -100,12 +100,12 @@ export function verifySyntax(command) {
 
         case 'INSERT':
 
-        const regex = /INSERT\s+INTO\s+\w+\s*(?:\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*(?:VALUES\s*\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*/ui;
+            const regex = /INSERT\s+INTO\s+\w+\s*(?:\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*(?:VALUES\s*\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*/ui;
 
             const match = command.match(regex);
 
             if (match) {
-                
+
                 return command;
 
             } else {
@@ -114,7 +114,7 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-        const findRegex = /^FIND(?: DISTINCT)?(?: [*,\w\s,]+) IN \w+(?: WHERE \w+ (?:=|!=|>|<|>=|<=) ['"]?[\w\s]+['"]?)?(?: OFFSET \d+)?(?: LIMIT \d+)?$/ui;
+            const findRegex = /^FIND(?: DISTINCT)?(?: [*,\w\s,]+) IN \w+(?: WHERE \w+ (?:=|!=|>|<|>=|<=) ['"]?[\w\s]+['"]?)?(?: OFFSET \d+)?(?: LIMIT \d+)?$/ui;
 
             // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
 
@@ -147,7 +147,7 @@ export function verifySyntax(command) {
 
         case 'DELETE':
 
-        const deleteRegex = /^DELETE FROM \w+(?: WHERE \w+\s*(=|!=|>|<|>=|<=)\s*['"]?[\w\s]+['"]?)?$/ui;
+            const deleteRegex = /^DELETE FROM \w+(?: WHERE \w+\s*(=|!=|>|<|>=|<=)\s*['"]?[\w\s]+['"]?)?$/ui;
 
             if (!deleteRegex.test(command)) {
                 execError('Invalid format for delete command');
@@ -157,7 +157,7 @@ export function verifySyntax(command) {
 
         case 'UPDATE':
 
-        const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*)\s*WHERE\s+(\w+)\s*(=|!=|>|<|>=|<=)\s*(?:"([^"]*)"|'([^']*)'|([^'",]+))/ui;
+            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*)\s*WHERE\s+(\w+)\s*(=|!=|>|<|>=|<=)\s*(?:"([^"]*)"|'([^']*)'|([^'",]+))/ui;
 
             if (!updateRegex.test(command)) {
                 execError('Invalid format for update command');

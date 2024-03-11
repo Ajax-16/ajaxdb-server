@@ -1,0 +1,8 @@
+{
+    "columns": [
+        "id", "name", "description"
+    ],
+    "where": "id > 10",
+    "offset": 20,
+    "limit": 10
+}
