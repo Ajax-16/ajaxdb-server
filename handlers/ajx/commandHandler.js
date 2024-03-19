@@ -114,7 +114,7 @@ export async function executeCommand(command) {
             }
 
             if (whereIndex !== -1) {
-                const conditionMatch = command.match(/WHERE\s+(.+?)\s*(=|!=|>|<|>=|<=)\s*('[^']*'|\b[^' ]+\b)/ui);
+                const conditionMatch = command.match(/WHERE\s+(.+?)\s*(=|!=|>|<|>=|<=|LIKE|NOT LIKE)\s*('[^']*'|\b[^' ]+\b)/ui);
                 if (conditionMatch) {
                     condition = conditionMatch[1];
                     findOperator = conditionMatch[2];
