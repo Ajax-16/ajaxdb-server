@@ -114,12 +114,12 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-            const findRegex = /^FIND(?: DISTINCT)?(?: [*,\w\s,]+) IN \w+(?: WHERE \w+ (?:=|!=|>|<|>=|<=|LIKE|NOT LIKE) ['"]?[%]?[\w\s]+[%]?['"]?)?(?: OFFSET \d+)?(?: LIMIT \d+)?$/ui;
+            const findRegex = /^FIND(?: DISTINCT)?(?: \*|[\w\s,]+)? IN \w+(?: WHERE \w+ (?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN) (?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?)*\s*\)|['"]?[%]?[\w\s,]+[%]?['"]?))?(?: OFFSET \d+)?(?: LIMIT \d+)?$/ui;
 
             // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
 
             if (!findRegex.test(command)) {
-                execError('Invalid formate for finding command');
+                execError('Invalid format for finding command');
             }
 
             return command;

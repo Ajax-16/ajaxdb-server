@@ -86,9 +86,6 @@ export async function executeCommand(command) {
             let findColumns = [];
 
             const parts = command.split(/\bIN\b/ui);
-            if (parts.length !== 2) {
-                throw new Error('Invalid format for finding command');
-            }
 
             const findTableName = parts[1].trim().split(" ")[0];
             let findCommand = parts[0].trim();
@@ -114,11 +111,16 @@ export async function executeCommand(command) {
             }
 
             if (whereIndex !== -1) {
-                const conditionMatch = command.match(/WHERE\s+(.+?)\s*(=|!=|>|<|>=|<=|LIKE|NOT LIKE)\s*('[^']*'|\b[^' ]+\b)/ui);
+                const conditionMatch = command.match(/WHERE\s+(.+?)\s*(=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s*((?:\([^)]*\))|('[^']*'|\b[^' ]+\b))/ui);
                 if (conditionMatch) {
                     condition = conditionMatch[1];
                     findOperator = conditionMatch[2];
-                    conditionValue = conditionMatch[3];
+                    if (findOperator.toUpperCase() === 'IN' || findOperator.toUpperCase() === 'NOT IN') {
+                        // Extraer valores entre paréntesis y separarlos por coma
+                        conditionValue = conditionMatch[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
+                    } else {
+                        conditionValue = conditionMatch[3];
+                    }
                 }
             }
 
@@ -137,6 +139,7 @@ export async function executeCommand(command) {
             }
 
             const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
+
             if (condition === 'PRIMARY_KEY') {
                 return await currentDB.find({
                     tableName: findTableName,
