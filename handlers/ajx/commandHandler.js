@@ -82,7 +82,7 @@ export async function executeCommand(command) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
 
-            let condition, findOperator, conditionValue, offset, limit, distinct;
+            let condition, findOperator, conditionValue, offset, limit, distinct, orderBy, asc;
             let findColumns = [];
 
             const parts = command.split(/\bIN\b/ui);
@@ -92,6 +92,7 @@ export async function executeCommand(command) {
             const whereIndex = command.search(/\bWHERE\b/ui);
             const limitIndex = command.search(/\bLIMIT\b/ui);
             const offsetIndex = command.search(/\bOFFSET\b/ui);
+            const orderByIndex = command.search(/\bORDER BY\b/ui);
 
             if (findCommand.match(/\bDISTINCT\b/i)) {
                 distinct = true;
@@ -137,6 +138,17 @@ export async function executeCommand(command) {
                     limit = parseInt(limitMatch[1]);
                 }
             }
+            if (orderByIndex !== -1) {
+                const orderByMatch = command.match(/ORDER BY\s+(\w+)(?:\s+(ASC|DESC))?/ui);
+                if(orderByMatch) {
+                    orderBy = clean(orderByMatch[1]);
+                    if(orderByMatch[2]) {
+                        asc = orderByMatch[2].toUpperCase() === 'DESC' ? false : true;
+                    }else {
+                        asc = true;
+                    }
+                }
+            }
 
             const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
 
@@ -149,7 +161,9 @@ export async function executeCommand(command) {
                     operator: findOperator,
                     conditionValue: cleanConditionValue,
                     offset,
-                    limit
+                    limit,
+                    orderBy,
+                    asc
                 });
             } else if (condition) {
                 return await currentDB.find({
@@ -160,7 +174,9 @@ export async function executeCommand(command) {
                     operator: findOperator,
                     conditionValue: cleanConditionValue,
                     offset,
-                    limit
+                    limit,
+                    orderBy,
+                    asc
                 });
             }else {
                 return await currentDB.showOneTable({ tableName: findTableName, distinct, columns: findColumns, offset, limit });

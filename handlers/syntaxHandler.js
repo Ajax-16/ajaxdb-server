@@ -114,7 +114,7 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-            const findRegex = /^FIND(?: DISTINCT)?(?: \*|[\w\s,]+)? IN \w+(?: WHERE \w+ (?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN) (?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?)*\s*\)|['"]?[%]?[\w\s,]+[%]?['"]?))?(?: OFFSET \d+)?(?: LIMIT \d+)?$/ui;
+            const findRegex = /^FIND(?: DISTINCT)?(?: \*|[\w\s,]+)? IN \w+(?: WHERE \w+ (?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN) (?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?)*\s*\)|['"]?[%]?[\w\s,]+[%]?['"]?))?(?: OFFSET \d+)?(?: LIMIT \d+)?(?: ORDER BY \w+ (?:ASC|DESC))?$/ui;
 
             // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
 
