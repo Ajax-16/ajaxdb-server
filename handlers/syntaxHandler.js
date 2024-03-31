@@ -112,18 +112,6 @@ export function verifySyntax(command) {
                 execError('INSERT command has an unexpected format.');
             }
 
-        case 'FIND':
-
-            const findRegex = /^FIND(?: DISTINCT)?(?: \*|[\w\s,]+)? IN \w+(?: WHERE \w+ (?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN) (?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?)*\s*\)|['"]?[%]?[\w\s,]+[%]?['"]?))?(?: OFFSET \d+)?(?: LIMIT \d+)?(?: ORDER BY \w+ (?:ASC|DESC))?$/ui;
-
-            // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
-
-            if (!findRegex.test(command)) {
-                execError('Invalid format for finding command');
-            }
-
-            return command;
-
         case 'DESCRIBE':
 
             const describeElement = commandParts[1];
@@ -145,9 +133,22 @@ export function verifySyntax(command) {
                     execError('Element: ' + describeElement + ' does not support the DESCRIBE command.');
             }
 
+
+        case 'FIND':
+
+            const findRegex = /^FIND(?: DISTINCT)?(?: \*|[\w\s,]+)? IN \w+(?: WHERE \w+\s?(?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s?(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*))?)?(?: OFFSET \d+)?(?: LIMIT \d+)?(?: ORDER BY \w+ (?:ASC|DESC))?$/ui;
+
+            // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
+
+            if (!findRegex.test(command)) {
+                execError('Invalid format for finding command');
+            }
+
+            return command;
+
         case 'DELETE':
 
-            const deleteRegex = /^DELETE FROM \w+(?: WHERE \w+\s*(=|!=|>|<|>=|<=)\s*['"]?[\w\s]+['"]?)?$/ui;
+            const deleteRegex = /^DELETE FROM \w+ WHERE \w+\s?(?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s?(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*))$/ui;
 
             if (!deleteRegex.test(command)) {
                 execError('Invalid format for delete command');
@@ -157,7 +158,7 @@ export function verifySyntax(command) {
 
         case 'UPDATE':
 
-            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*)\s*WHERE\s+(\w+)\s*(=|!=|>|<|>=|<=)\s*(?:"([^"]*)"|'([^']*)'|([^'",]+))/ui;
+            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)|\d*\.?\d*)*)\s*WHERE (\w+)\s?((?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN))\s?((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))/ui;
 
             if (!updateRegex.test(command)) {
                 execError('Invalid format for update command');

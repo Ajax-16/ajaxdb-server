@@ -92,7 +92,7 @@ export async function router({ method, route = '/', params, body }) {
     const database = route.split('/')[1];
     const table = route.split('/')[2];
 
-    if(!database) {
+    if (!database) {
         throw new Error('No database specified');
     }
 
@@ -145,6 +145,26 @@ export async function router({ method, route = '/', params, body }) {
                     command += ' LIMIT ' + decodeURIComponent(limitClause);
                 }
 
+                const orderByClause = body ? body.orderBy || null : params && params.orderBy || null;
+
+                if (orderByClause) {
+                    command += ' ORDER BY ' + decodeURIComponent(orderByClause);
+
+                    const ascClause = body ? body.asc || null : params && params.asc || null;
+
+                    if (ascClause !== null) {
+                        
+                        if (ascClause.toUpperCase() == "TRUE") {
+                            command += ' ASC'
+                        } else if(ascClause.toUpperCase() == "FALSE") {
+                            command += ' DESC'
+                        }
+
+                    }
+
+                }
+
+
             } else {
 
                 command += '* IN ' + table;
@@ -161,12 +181,12 @@ export async function router({ method, route = '/', params, body }) {
 
         case 'POST':
 
-            if(!table) {
-                if(!body) {
+            if (!table) {
+                if (!body) {
                     throw new Error('No table specifications');
-                }else{
+                } else {
 
-                    if(!body.name) {
+                    if (!body.name) {
                         throw new Error('No name specification for new table');
                     }
 
@@ -174,18 +194,18 @@ export async function router({ method, route = '/', params, body }) {
 
                     command += `CREATE TABLE ${body.name} (${body.primaryKey} as PRIMARY_KEY`
 
-                    if(!body.columns) {
+                    if (!body.columns) {
                         throw new Error('There must be at least one column');
-                    }else {
-                        body.columns.forEach((column)=>{
+                    } else {
+                        body.columns.forEach((column) => {
                             command += `, ${column}`
                         })
-    
+
                         command += ')';
                     }
 
                 }
-            }else {
+            } else {
 
                 await executeCommand(`INIT ${database}`);
 
@@ -194,9 +214,9 @@ export async function router({ method, route = '/', params, body }) {
                 let manyElements = false;
 
                 for (const key in body) {
-                    if(manyElements) {
+                    if (manyElements) {
                         command += `, ${key}`;
-                    }else{
+                    } else {
                         command += `${key}`;
                         manyElements = true;
                     }
@@ -207,13 +227,13 @@ export async function router({ method, route = '/', params, body }) {
                 command += `) VALUES (`;
 
                 for (const key in body) {
-                    if(manyElements) {
+                    if (manyElements) {
                         command += `, '${body[key]}'`;
-                    }else {
+                    } else {
                         command += `'${body[key]}'`;
                         manyElements = true;
                     }
-                    
+
                 }
 
                 command += ')';
@@ -224,64 +244,64 @@ export async function router({ method, route = '/', params, body }) {
 
         case 'PUT':
 
-        if(!body) {
-            throw new Error('Invalid format for PUT method');
-        }
+            if (!body) {
+                throw new Error('Invalid format for PUT method');
+            }
 
-        if(!table) {
+            if (!table) {
                 throw new Error('Invalid format for PUT method');
                 // TODO: Edición de una tabla (Edición de las columnas de una tabla)
-        }else {
+            } else {
 
-            await executeCommand(`INIT ${database}`);
-            
-            command = `UPDATE ${table} SET `
+                await executeCommand(`INIT ${database}`);
 
-            let manyElements = false;
+                command = `UPDATE ${table} SET `
 
-            for (const key in body) {
-                if(manyElements) {
-                    command += `, ${key} = '${body[key]}'`;
-                }else{
-                    command += `${key} = '${body[key]}'`;
-                    manyElements = true;
+                let manyElements = false;
+
+                for (const key in body) {
+                    if (manyElements) {
+                        command += `, ${key} = '${body[key]}'`;
+                    } else {
+                        command += `${key} = '${body[key]}'`;
+                        manyElements = true;
+                    }
                 }
+
+                if (route.split('/')[3]) {
+                    command += ` WHERE PRIMARY_KEY = '${route.split('/')[3]}'`;
+                } else if (params) {
+                    command += ` WHERE ${decodeURIComponent(params.where)}`;
+                } else {
+                    throw new Error('No elements selected for updating');
+                }
+
             }
 
-            if(route.split('/')[3]) {
-                command += ` WHERE PRIMARY_KEY = '${route.split('/')[3]}'`;
-            }else if(params) {
-                command += ` WHERE ${decodeURIComponent(params.where)}`;
-            }else {
-                throw new Error('No elements selected for updating');
-            }
-
-        }
-
-        return command;
+            return command;
 
         case 'DELETE':
 
-        if(!table) {
-            command = `DROP DATABASE ${database}`;
-        }else {
+            if (!table) {
+                command = `DROP DATABASE ${database}`;
+            } else {
 
-            await executeCommand(`INIT ${database}`);
-            
-            command = `DELETE FROM ${table}`
+                await executeCommand(`INIT ${database}`);
 
-            if(route.split('/')[3]) {
-                command += ` WHERE PRIMARY_KEY = '${route.split('/')[3]}'`;
-            }else if(params && params.where) {
-                command += ` WHERE ${decodeURIComponent(params.where)}`;
+                command = `DELETE FROM ${table}`
+
+                if (route.split('/')[3]) {
+                    command += ` WHERE PRIMARY_KEY = '${route.split('/')[3]}'`;
+                } else if (params && params.where) {
+                    command += ` WHERE ${decodeURIComponent(params.where)}`;
+                }
+                else if (body && body.where) {
+                    command += ` WHERE ${body.where}`;
+                } else {
+                    command = `DROP TABLE ${table}`;
+                }
+
             }
-            else if(body && body.where) {
-                command += ` WHERE ${body.where}`;
-            }else {
-                command = `DROP TABLE ${table}`;
-            }
-
-        }
 
             return command;
 

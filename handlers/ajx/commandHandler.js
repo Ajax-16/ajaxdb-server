@@ -165,7 +165,7 @@ export async function executeCommand(command) {
                     orderBy,
                     asc
                 });
-            } else if (condition) {
+            } else {
                 return await currentDB.find({
                     tableName: findTableName,
                     distinct,
@@ -178,8 +178,6 @@ export async function executeCommand(command) {
                     orderBy,
                     asc
                 });
-            }else {
-                return await currentDB.showOneTable({ tableName: findTableName, distinct, columns: findColumns, offset, limit });
             }
 
         case 'DESCRIBE':
@@ -224,33 +222,37 @@ export async function executeCommand(command) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
 
-            const deleteRegex = /^DELETE FROM (\w+)(?: WHERE (\w+)\s*(=|!=|>|<|>=|<=)\s*(['"]?[\w\s]+['"]?))?$/ui;
+            const deleteRegex = /^DELETE FROM (\w+) WHERE (\w+)\s?((?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN))\s?((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))$/ui;
             const deleteMatch = command.match(deleteRegex);
 
             const deleteTableName = deleteMatch[1];
             const deleteWhereField = deleteMatch[2];
-            const operator = deleteMatch[3] || '=';
-            const deleteConditionValue = deleteMatch[4] ? clean(deleteMatch[4]) : undefined;
+            const deleteOperator = deleteMatch[3];
+            let deleteConditionValue;
 
-            if (!deleteWhereField) {
-                return currentDB.showOneTable(deleteTableName);
+            if(deleteMatch[4]) {
+                if(deleteOperator.toUpperCase() === 'IN' || deleteOperator.toUpperCase() === 'NOT IN') {
+                    deleteConditionValue = deleteMatch[4].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
+                }else {
+                    deleteConditionValue = clean(deleteMatch[4]);
+                }
+            }else {
+                throw new Error('You must specify a condition value for WHERE clause.');
             }
-
-            const cleanedDeleteConditionValue = clean(deleteConditionValue);
 
             if(deleteWhereField === 'PRIMARY_KEY') {
                 return await currentDB.delete({
                     tableName: deleteTableName,
                     condition: undefined,
-                    operator: operator,
-                    conditionValue: cleanedDeleteConditionValue
+                    operator: deleteOperator,
+                    conditionValue: deleteConditionValue
                 });
             }else {
                 return await currentDB.delete({
                     tableName: deleteTableName,
                     condition: deleteWhereField,
-                    operator: operator,
-                    conditionValue: cleanedDeleteConditionValue
+                    operator: deleteOperator,
+                    conditionValue: deleteConditionValue
                 });
             }
 
@@ -259,25 +261,24 @@ export async function executeCommand(command) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
 
-            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*))*)\s*WHERE\s+(\w+)\s*(=|!=|>|<|>=|<=)\s*(?:"([^"]*)"|'([^']*)'|([^'",]+))/ui;
+            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)|\d*\.?\d*)*)\s*WHERE (\w+)\s?((?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN))\s?((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))/ui;
 
-            const match = command.match(updateRegex);
+            const updateMatch = command.match(updateRegex);
 
-            if (!match) {
+            if (!updateMatch) {
                 throw new Error('Invalid UPDATE command format.');
             }
 
-            const updateTableName = match[1];
-            const setClause = match[2];
-            const updateCondition = match[3];
-            const updateOperator = match[4];
+            const updateTableName = updateMatch[1];
+            const setClause = updateMatch[2];
+            const updateCondition = updateMatch[3];
+            const updateOperator = updateMatch[4];
             let updateConditionValue;
-            if (match[5]) {
-                updateConditionValue = clean(match[5]);
-            } else if (match[6]) {
-                updateConditionValue = clean(match[6]);
-            } else if (match[7]) {
-                updateConditionValue = clean(match[7]);
+
+            if(updateOperator.toUpperCase() === 'IN' || updateOperator.toUpperCase() === 'NOT IN') {
+                updateConditionValue = updateMatch[5].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
+            }else {
+                updateConditionValue = clean(updateMatch[5]);
             }
 
             // Parse SET clause
@@ -293,6 +294,8 @@ export async function executeCommand(command) {
                     return value;
                 }
             });
+
+
 
             // Perform the update operation
             if (updateCondition === 'PRIMARY_KEY') {
