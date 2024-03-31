@@ -1,6 +1,6 @@
 FROM node:latest
 
-WORKDIR /ajaxdb_server
+WORKDIR /ajaxdb
 
 RUN git clone https://github.com/Ajax-16/ajaxdb-server.git .
 
