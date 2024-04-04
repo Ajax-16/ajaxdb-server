@@ -1,4 +1,4 @@
-import { DB, dropDb, describeDatabase } from 'ajaxdb-core';
+import { DB, dropDb, describeDatabase } from 'nuedb_core';
 import { verifySyntax } from '../syntaxHandler.js';
 import { cleanColumns } from "../../utils/string.js";
 import { clean } from "../../utils/string.js";
