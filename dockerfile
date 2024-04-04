@@ -1,8 +1,8 @@
 FROM node:latest
 
-WORKDIR /ajaxdb
+WORKDIR /nuedb
 
-RUN git clone https://github.com/Ajax-16/ajaxdb-server.git .
+RUN git clone https://github.com/Ajax-16/nuedb-server.git .
 
 RUN npm install
 
