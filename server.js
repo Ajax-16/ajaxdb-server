@@ -1,7 +1,7 @@
 import net from 'net';
 import dotenv from 'dotenv';
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
-import { executeCommand } from './handlers/ajx/commandHandler.js';
+import { executeCommand } from './handlers/Nue/commandHandler.js';
 
 let PORT, CHUNK_SIZE;
 
@@ -18,11 +18,11 @@ const server = net.createServer(async (socket) => {
   socket.on('data', async (data) => {
 
     const isHttpRequest = data.toString().includes('HTTP');
-    const isAjxRequest = data.toString().includes('AJX');
+    const isNueRequest = data.toString().includes('NUE');
 
     if (isHttpRequest) {
       await handleHTTP(socket, data);
-    } else if (isAjxRequest) {
+    } else if (isNueRequest) {
       await handleTCP(socket, data);
     }
 
@@ -33,7 +33,7 @@ const server = net.createServer(async (socket) => {
 async function handleTCP(socket, data) {
   let command = data.toString().trim();
   try {
-    command = command.replace(/AJX\r\n\r\n/g, '');
+    command = command.replace(/NUE\r\n\r\n/g, '');
     const result = await executeCommand(command);
     if (result.length <= CHUNK_SIZE) {
       socket.write(JSON.stringify(result));
