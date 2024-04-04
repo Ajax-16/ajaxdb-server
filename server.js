@@ -1,7 +1,7 @@
 import net from 'net';
 import dotenv from 'dotenv';
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
-import { executeCommand } from './handlers/Nue/commandHandler.js';
+import { executeCommand } from './handlers/nue/commandHandler.js';
 
 let PORT, CHUNK_SIZE;
 
