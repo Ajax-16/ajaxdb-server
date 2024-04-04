@@ -1,7 +1,7 @@
 import { pascalCaseToCamelCase } from "../../utils/string.js";
 import { statusCodes } from "./lib/httpStatusCodes.js";
 import { ormParse } from "../../utils/array.js";
-import { executeCommand } from "../ajx/commandHandler.js";
+import { executeCommand } from "../nue/commandHandler.js";
 
 export function getHttpRequest(payload) {
     payload = payload.toString();
