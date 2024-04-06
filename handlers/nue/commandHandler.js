@@ -5,9 +5,9 @@ import { clean } from "../../utils/string.js";
 
 let currentDB = 'placeholder';
 
-export async function executeCommand(command) {
+export async function executeCommand(rawCommand) {
 
-    verifySyntax(command);
+    let { commandMatch, command } = verifySyntax(rawCommand);
 
     const commandParts = command.split(' ');
     const action = commandParts[0].toUpperCase();
@@ -82,103 +82,39 @@ export async function executeCommand(command) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
 
-            let condition, findOperator, conditionValue, offset, limit, distinct, orderBy, asc;
-            let findColumns = [];
-
-            const parts = command.split(/\bIN\b/ui);
-
-            const findTableName = parts[1].trim().split(" ")[0];
-            let findCommand = parts[0].trim();
-            const whereIndex = command.search(/\bWHERE\b/ui);
-            const limitIndex = command.search(/\bLIMIT\b/ui);
-            const offsetIndex = command.search(/\bOFFSET\b/ui);
-            const orderByIndex = command.search(/\bORDER BY\b/ui);
-
-            if (findCommand.match(/\bDISTINCT\b/i)) {
-                distinct = true;
-                findCommand = findCommand.replace(/\bDISTINCT\b/i, "").trim();
-            } else {
-                distinct = false;
+            const findQueryObject = {
+                distinct: Boolean(commandMatch[1].trim()),
+                columns: commandMatch[2] === '*' ? undefined : commandMatch[2].split(',').map(column => column.trim()),
+                tableName: commandMatch[3],
+                condition: commandMatch[5],
+                operator: commandMatch[6],
+                offset: commandMatch[8],
+                limit: commandMatch[9],
+                orderBy: commandMatch[10],
             }
 
-            // Buscar el índice de la palabra clave "IN" para obtener las columnas seleccionadas
-            const columnsMatch = findCommand.substring(findCommand.indexOf('FIND') + 5).trim();
-            if (columnsMatch) {
-                if (columnsMatch === '*') {
-                    findColumns = undefined; // Si el valor es "*", no se pasa ninguna columna
+            // Asignación de valor de la condición si es usada la variable PRIMARY_KEY
+            if (findQueryObject.condition === 'PRIMARY_KEY') {
+                findQueryObject.condition = undefined;
+            }
+
+            // Asignación de valores dependiendo del operador. Si es IN o NOT IN deberá expresarse como un array de elementos, si no, como valores normales (string, number, boolean...).
+            if (findQueryObject.operator) {
+                if (findQueryObject.operator.toUpperCase() === 'IN' || findQueryObject.operator.toUpperCase() === 'NOT IN') {
+                    findQueryObject.conditionValue = commandMatch[7].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
                 } else {
-                    findColumns = columnsMatch.split(',').map(column => column.trim());
+                    findQueryObject.conditionValue = clean(commandMatch[7]);
                 }
             }
 
-            if (whereIndex !== -1) {
-                const conditionMatch = command.match(/WHERE\s+(.+?)\s*(=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s*((?:\([^)]*\))|('[^']*'|\b[^' ]+\b))/ui);
-                if (conditionMatch) {
-                    condition = conditionMatch[1];
-                    findOperator = conditionMatch[2];
-                    if (findOperator.toUpperCase() === 'IN' || findOperator.toUpperCase() === 'NOT IN') {
-                        // Extraer valores entre paréntesis y separarlos por coma
-                        conditionValue = conditionMatch[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-                    } else {
-                        conditionValue = conditionMatch[3];
-                    }
-                }
-            }
-
-            if (offsetIndex !== -1) {
-                const offsetMatch = command.match(/OFFSET\s+(\d+)/ui);
-                if (offsetMatch) {
-                    offset = parseInt(offsetMatch[1]);
-                }
-            }
-
-            if (limitIndex !== -1) {
-                const limitMatch = command.match(/LIMIT\s+(\d+)/ui);
-                if (limitMatch) {
-                    limit = parseInt(limitMatch[1]);
-                }
-            }
-            if (orderByIndex !== -1) {
-                const orderByMatch = command.match(/ORDER BY\s+(\w+)(?:\s+(ASC|DESC))?/ui);
-                if(orderByMatch) {
-                    orderBy = clean(orderByMatch[1]);
-                    if(orderByMatch[2]) {
-                        asc = orderByMatch[2].toUpperCase() === 'DESC' ? false : true;
-                    }else {
-                        asc = true;
-                    }
-                }
-            }
-
-            const cleanConditionValue = conditionValue ? clean(conditionValue) : undefined;
-
-            if (condition === 'PRIMARY_KEY') {
-                return await currentDB.find({
-                    tableName: findTableName,
-                    distinct,
-                    columns: findColumns,
-                    condition: undefined,
-                    operator: findOperator,
-                    conditionValue: cleanConditionValue,
-                    offset,
-                    limit,
-                    orderBy,
-                    asc
-                });
+            // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
+            if (commandMatch[11] === undefined || commandMatch[11].toUpperCase() === 'ASC') {
+                findQueryObject.asc = true;
             } else {
-                return await currentDB.find({
-                    tableName: findTableName,
-                    distinct,
-                    columns: findColumns,
-                    condition,
-                    operator: findOperator,
-                    conditionValue: cleanConditionValue,
-                    offset,
-                    limit,
-                    orderBy,
-                    asc
-                });
+                findQueryObject.asc = false;
             }
+
+            return await currentDB.find(findQueryObject);
 
         case 'DESCRIBE':
 
@@ -230,24 +166,24 @@ export async function executeCommand(command) {
             const deleteOperator = deleteMatch[3];
             let deleteConditionValue;
 
-            if(deleteMatch[4]) {
-                if(deleteOperator.toUpperCase() === 'IN' || deleteOperator.toUpperCase() === 'NOT IN') {
+            if (deleteMatch[4]) {
+                if (deleteOperator.toUpperCase() === 'IN' || deleteOperator.toUpperCase() === 'NOT IN') {
                     deleteConditionValue = deleteMatch[4].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-                }else {
+                } else {
                     deleteConditionValue = clean(deleteMatch[4]);
                 }
-            }else {
+            } else {
                 throw new Error('You must specify a condition value for WHERE clause.');
             }
 
-            if(deleteWhereField === 'PRIMARY_KEY') {
+            if (deleteWhereField === 'PRIMARY_KEY') {
                 return await currentDB.delete({
                     tableName: deleteTableName,
                     condition: undefined,
                     operator: deleteOperator,
                     conditionValue: deleteConditionValue
                 });
-            }else {
+            } else {
                 return await currentDB.delete({
                     tableName: deleteTableName,
                     condition: deleteWhereField,
@@ -275,9 +211,9 @@ export async function executeCommand(command) {
             const updateOperator = updateMatch[4];
             let updateConditionValue;
 
-            if(updateOperator.toUpperCase() === 'IN' || updateOperator.toUpperCase() === 'NOT IN') {
+            if (updateOperator.toUpperCase() === 'IN' || updateOperator.toUpperCase() === 'NOT IN') {
                 updateConditionValue = updateMatch[5].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-            }else {
+            } else {
                 updateConditionValue = clean(updateMatch[5]);
             }
 
@@ -307,7 +243,7 @@ export async function executeCommand(command) {
                     operator: updateOperator,
                     conditionValue: updateConditionValue
                 });
-            }else {
+            } else {
                 return await currentDB.update({
                     tableName: updateTableName,
                     set: setArray,

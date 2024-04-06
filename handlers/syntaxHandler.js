@@ -16,7 +16,7 @@ export function verifySyntax(command) {
             if (commandParts.length > 2) {
                 execError('1 argument expected (database name) but got: ' + (commandParts.length - 1).toString());
             }
-            return command;
+            return {command};
 
         case 'DROP':
 
@@ -33,7 +33,7 @@ export function verifySyntax(command) {
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
                 case 'TABLE':
-                    return command;
+                    return {command};
 
                 default:
                     execError('Element: ' + dropElement + ' does not support the DROP command.');
@@ -96,21 +96,20 @@ export function verifySyntax(command) {
                 }
             });
 
-            return command;
+            return {command};
 
         case 'INSERT':
 
             const regex = /INSERT\s+INTO\s+\w+\s*(?:\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*(?:VALUES\s*\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*/ui;
 
-            const match = command.match(regex);
-
-            if (match) {
-
-                return command;
-
-            } else {
-                execError('INSERT command has an unexpected format.');
+            if (!insertMatch.test(command)) {
+                execError('Invalid format for insert command');
             }
+
+            const insertMatch = command.match(regex);
+
+            return {command, commandMatch: insertMatch};
+
 
         case 'DESCRIBE':
 
@@ -127,7 +126,7 @@ export function verifySyntax(command) {
             switch (describeElement.toUpperCase()) {
                 case 'DATABASE':
                 case 'TABLE':
-                    return command;
+                    return {command};
 
                 default:
                     execError('Element: ' + describeElement + ' does not support the DESCRIBE command.');
@@ -136,15 +135,15 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-            const findRegex = /^FIND(?: DISTINCT)?(?: \*|[\w\s,]+)? IN \w+(?: WHERE \w+\s?(?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s?(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*))?)?(?: OFFSET \d+)?(?: LIMIT \d+)?(?: ORDER BY \w+ (?:ASC|DESC))?$/ui;
-
-            // REGEX GENERADA CON INTELIGENCIA ARTIFICIAL
+            const findRegex = /^\s*FIND\s+((?:DISTINCT\s+)?)((?:\*|[\w\s,]+)?)\s+IN\s+(\w+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:\w+\.\w+|\w+))\s*((?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+NOT\s+LIKE\s+|IN|\s+NOT\s+IN\s+))\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?))?\s*(?:OFFSET\s+(\d+))?\s*(?:LIMIT\s+(\d+))?\s*(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?$/ui;
 
             if (!findRegex.test(command)) {
                 execError('Invalid format for finding command');
             }
 
-            return command;
+            const findMatch = command.match(findRegex);
+
+            return {command, commandMatch: findMatch};
 
         case 'DELETE':
 
@@ -154,7 +153,7 @@ export function verifySyntax(command) {
                 execError('Invalid format for delete command');
             }
 
-            return command;
+            return {command};
 
         case 'UPDATE':
 
@@ -164,7 +163,7 @@ export function verifySyntax(command) {
                 execError('Invalid format for update command');
             }
 
-            return command;
+            return {command};
 
         default:
             execError('Invalid command action: "' + action + '"')
