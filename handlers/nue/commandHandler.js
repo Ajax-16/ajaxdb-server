@@ -127,8 +127,6 @@ export async function executeCommand(rawCommand) {
                 findQueryObject.asc = false;
             }
 
-            console.log(findQueryObject)
-
             return await currentDB.find(findQueryObject);
 
         case 'DESCRIBE':
