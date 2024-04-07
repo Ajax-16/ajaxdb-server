@@ -93,6 +93,19 @@ export async function executeCommand(rawCommand) {
                 orderBy: commandMatch[10],
             }
 
+            if (commandMatch[4]) {
+                const joins = commandMatch[4].split(/\w+\s*join\s*/i).splice(1).map(join => {
+                    const divisorElement = join.split(/\s*on\s*/i);
+                    const joinElement = {
+                        referenceTable: [...divisorElement].shift(),
+                        columnName: [...divisorElement].pop().split('=').shift().trim(), 
+                        referenceColumn: [...divisorElement].pop().split('=').pop().trim(), 
+                    }
+                    return joinElement
+                });
+                findQueryObject.joins = joins;
+            }
+
             // Asignación de valor de la condición si es usada la variable PRIMARY_KEY
             if (findQueryObject.condition === 'PRIMARY_KEY') {
                 findQueryObject.condition = undefined;
@@ -113,6 +126,8 @@ export async function executeCommand(rawCommand) {
             } else {
                 findQueryObject.asc = false;
             }
+
+            console.log(findQueryObject)
 
             return await currentDB.find(findQueryObject);
 
