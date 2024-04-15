@@ -92,7 +92,6 @@ export async function executeCommand(rawCommand) {
                 limit: commandMatch[9],
                 orderBy: commandMatch[10],
             }
-            console.log("hola")
 
             if (commandMatch[4]) {
                 const joins = commandMatch[4].split(/\w+\s*join\s*/i).splice(1).map(join => {
