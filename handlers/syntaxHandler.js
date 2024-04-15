@@ -102,7 +102,7 @@ export function verifySyntax(command) {
 
             const regex = /INSERT\s+INTO\s+\w+\s*(?:\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*(?:VALUES\s*\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*/ui;
 
-            if (!insertMatch.test(command)) {
+            if (!regex.test(command)) {
                 execError('Invalid format for insert command');
             }
 
@@ -135,9 +135,7 @@ export function verifySyntax(command) {
 
         case 'FIND':
 
-            const findRegex = /^\s*FIND\s+(DISTINCT\s+)?((?:\*|(?:\w+\.\w+,?|\w+,?\s*?)+))\s+IN\s+(\w+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+NOT\s+LIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?))?\s*(?:OFFSET\s+(\d+))?\s*(?:LIMIT\s+(\d+))?\s*(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?(ASC|DESC)?$/ui;
-
-            // TODO: MEJORAR REGEX. LITERALMENTE SE QUEDA COLGADO A VECES. MOVER ESTA COMPROBACION AL CLIENTE. ESTO ES MUY CARO A NIVEL DE RENDIMIENTO.
+            const findRegex = /^\s*FIND\s+((?:DISTINCT\s+)?)((?:\*|[\w\s,]+)?)\s+IN\s+(\w+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:\w+\.\w+|\w+))\s*((?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+NOT\s+LIKE\s+|IN|\s+NOT\s+IN\s+))\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?))?\s*(?:OFFSET\s+(\d+))?\s*(?:LIMIT\s+(\d+))?\s*(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?$/ui;
 
             if (!findRegex.test(command)) {
                 execError('Invalid format for finding command');

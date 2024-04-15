@@ -83,7 +83,7 @@ export async function executeCommand(rawCommand) {
             }
 
             const findQueryObject = {
-                distinct: Boolean(commandMatch[1].trim()),
+                distinct: Boolean(commandMatch[1]),
                 columns: commandMatch[2] === '*' ? undefined : commandMatch[2].split(',').map(column => column.trim()),
                 tableName: commandMatch[3],
                 condition: commandMatch[5],
@@ -92,6 +92,7 @@ export async function executeCommand(rawCommand) {
                 limit: commandMatch[9],
                 orderBy: commandMatch[10],
             }
+            console.log("hola")
 
             if (commandMatch[4]) {
                 const joins = commandMatch[4].split(/\w+\s*join\s*/i).splice(1).map(join => {
@@ -243,8 +244,6 @@ export async function executeCommand(rawCommand) {
                     return value;
                 }
             });
-
-
 
             // Perform the update operation
             if (updateCondition === 'PRIMARY_KEY') {
