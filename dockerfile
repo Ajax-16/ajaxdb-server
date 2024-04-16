@@ -2,7 +2,7 @@ FROM node:latest
 
 WORKDIR /nuedb
 
-RUN git clone https://github.com/Ajax-16/nuedb-server.git .
+COPY src .
 
 RUN npm install
 
