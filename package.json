@@ -1,6 +1,6 @@
 {
   "name": "nuedb-server",
-  "version": "0.1.1-v2",
+  "version": "0.1.1-v3",
   "description": "Non-Object based JS database manager server",
   "main": "server.js",
   "scripts": {

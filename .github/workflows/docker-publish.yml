@@ -28,9 +28,9 @@ jobs:
     - name: Construir y etiquetar la imagen Docker
       run: |
         if [ ${{ github.ref }} = 'refs/heads/main' ]; then
-          docker build -t ajax16/nuedb:stable .
+          docker build --no-cache -t ajax16/nuedb:stable .
           docker push ajax16/nuedb:stable
         elif [ ${{ github.ref }} = 'refs/heads/dev' ]; then
-          docker build -t ajax16/nuedb:latest .
+          docker build --no-cache -t ajax16/nuedb:latest .
           docker push ajax16/nuedb:latest
         fi
