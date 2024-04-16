@@ -16,11 +16,14 @@ if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
 
 const server = net.createServer(async (socket) => {
   socket.on('data', async (data) => {
+    
+    const isHandShake = data.toString().startsWith('NUE\r\n\r\nClient Hello')
+    const isHttpRequest = data.toString().startsWith('HTTP');
+    const isNueRequest = data.toString().startsWith('NUE');
 
-    const isHttpRequest = data.toString().includes('HTTP');
-    const isNueRequest = data.toString().includes('NUE');
-
-    if (isHttpRequest) {
+    if(isHandShake) {
+      await handleHandShake(socket, data);
+    } else if (isHttpRequest) {
       await handleHTTP(socket, data);
     } else if (isNueRequest) {
       await handleTCP(socket, data);
@@ -29,6 +32,16 @@ const server = net.createServer(async (socket) => {
     socket.on('end', () => { });
   });
 });
+
+async function handleHandShake(socket, data) {
+    let message = data.toString().trim().replace(/NUE\r\n\r\n/g, '');
+    // TODO -> Comprobar cabeceras de conexión inicial (credenciales, archivos...) en las cabeceras en un futuro en vez de unicamente el mensaje.
+    if(message === 'Client Hello') {
+      socket.write('Server Hello');
+    }else {
+      socket.write('Connection rejected');
+    }
+}
 
 async function handleTCP(socket, data) {
   let command = data.toString().trim();
