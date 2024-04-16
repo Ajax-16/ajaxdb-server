@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - dev
+      - feature
 
 jobs:
   construir_y_publicar:
@@ -31,6 +32,9 @@ jobs:
           docker build --no-cache -t ajax16/nuedb:stable .
           docker push ajax16/nuedb:stable
         elif [ ${{ github.ref }} = 'refs/heads/dev' ]; then
+          docker build --no-cache -t ajax16/nuedb:dev .
+          docker push ajax16/nuedb:dev
+        elif [ ${{ github.ref }} = 'refs/heads/feature' ]; then
           docker build --no-cache -t ajax16/nuedb:latest .
           docker push ajax16/nuedb:latest
         fi
