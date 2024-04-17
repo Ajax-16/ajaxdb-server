@@ -17,8 +17,8 @@ if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
 const server = net.createServer(async (socket) => {
   socket.on('data', async (data) => {
     
+    const isHttpRequest = data.toString().split('\r\n').shift().includes('HTTP')
     const isHandShake = data.toString().startsWith('NUE\r\n\r\nClient Hello')
-    const isHttpRequest = data.toString().startsWith('HTTP');
     const isNueRequest = data.toString().startsWith('NUE');
 
     if(isHandShake) {
@@ -66,16 +66,24 @@ async function handleHTTP(socket, data) {
 
     const request = getHttpRequest(data);
 
-    if(request.route !== '/favicon.ico') {
+    if(request.method === 'OPTIONS') {
+      socket.write(createHttpResponse({statusCode:200, customHeaders: {Allow: 'GET, POST, DELETE, PUT'}}))
+    } 
+    else if(request.method === 'HEAD') {
+      socket.write(createHttpResponse({ statusCode: 200 }));
+    }
+    else {
+      if(request.route !== '/favicon.ico') {
 
-      const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
-
-      const result = await executeCommand(routedRequest);
+        const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
   
-      socket.write(createHttpResponse({ payload: result, statusCode: 200 }));
+        const result = await executeCommand(routedRequest);
     
-    }else {
-      socket.write(createHttpResponse({payload: 'none', statusCode: 400}));
+        socket.write(createHttpResponse({ payload: result, statusCode: 200 }));
+      
+      }else {
+        socket.write(createHttpResponse({statusCode: 400}));
+      }
     }
 
   } catch (error) {

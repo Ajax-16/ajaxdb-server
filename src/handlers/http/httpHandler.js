@@ -19,7 +19,8 @@ export function getHttpRequest(payload) {
         request.params = {};
         const params = routeAndParams.split('?').pop().split('&');
         params.map(param => {
-            const [key, value] = param.split('=');
+            const [key] = param.split('=');
+            const value = param.replace(key + '=', '')
             request.params[key] = value;
         })
     }
@@ -70,16 +71,33 @@ export function getHttpResponse(plainResponse) {
 
 }
 
-export function createHttpResponse({ payload, version = '1.1', statusCode = '200', contentType = 'application/json; charset=UTF-8', connection = 'keep-alive' }) {
+export function createHttpResponse({ payload, version = '1.1', statusCode = '200', contentType = 'application/json; charset=UTF-8', connection = 'keep-alive', customHeaders }) {
     const statusMessage = statusCodes[statusCode];
 
-    payload = ormParse(payload);
-    payload = JSON.stringify(payload);
+    let contentLength = 0;
 
-    const contentLength = payload.length;
+    if(payload) {
+        payload = ormParse(payload);
+        payload = JSON.stringify(payload);
+        contentLength = payload.length;
+    }
 
-    const responseHeader = `HTTP/${version} ${statusCode} ${statusMessage}\r\nContent-Type: ${contentType}\r\nContent-Length: ${contentLength}\r\nConnection: ${connection}\r\n\r\n`;
-    const response = `${responseHeader}${payload}`;
+    // Cambiar los CORS para que puedan parametrizarse como configuracion de app
+    const CORS = '*'
+
+    let responseHeader = `HTTP/${version} ${statusCode} ${statusMessage}\r\nContent-Type: ${contentType}\r\nContent-Length: ${contentLength}\r\nConnection: ${connection}\r\nAccess-Control-Allow-Origin: ${CORS}`;
+    
+    if(customHeaders) {
+        for(let key in customHeaders) {
+            responseHeader = responseHeader.concat(`\r\n${key}: ${customHeaders[key]}`)
+        }
+    }
+
+    let response = responseHeader.concat('\r\n\r\n')
+
+    if(payload) {
+        response = response.concat(payload);
+    }
 
     return response;
 }
@@ -241,15 +259,16 @@ export async function router({ method, route = '/', params, body }) {
             }
 
             return command;
-
+        
+        case 'PATCH':
         case 'PUT':
 
             if (!body) {
-                throw new Error('Invalid format for PUT method');
+                throw new Error('Invalid format for PUT/PATCH method');
             }
 
             if (!table) {
-                throw new Error('Invalid format for PUT method');
+                throw new Error('Invalid format for PUT/PATCH method');
                 // TODO: Edición de una tabla (Edición de las columnas de una tabla)
             } else {
 
