@@ -171,8 +171,7 @@ export async function executeCommand(rawCommand) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
 
-            const deleteRegex = /^DELETE FROM (\w+) WHERE (\w+)\s?((?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN))\s?((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))$/ui;
-            const deleteMatch = command.match(deleteRegex);
+            const deleteMatch = commandMatch;
 
             const deleteTableName = deleteMatch[1];
             const deleteWhereField = deleteMatch[2];
@@ -210,15 +209,7 @@ export async function executeCommand(rawCommand) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
 
-            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)|\d*\.?\d*)*)\s*WHERE (\w+)\s?((?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN))\s?((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))/ui;
-
-            console.log(command)
-
-            const updateMatch = command.match(updateRegex);
-
-            if (!updateMatch) {
-                throw new Error('Invalid UPDATE command format.');
-            }
+            const updateMatch = commandMatch;
 
             const updateTableName = updateMatch[1];
             const setClause = updateMatch[2];

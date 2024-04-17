@@ -147,23 +147,27 @@ export function verifySyntax(command) {
 
         case 'DELETE':
 
-            const deleteRegex = /^DELETE FROM \w+ WHERE \w+\s?(?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s?(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*))$/ui;
+        const deleteRegex = /^DELETE\s*FROM\s*(\w+)\s*WHERE\s*(\w+)\s*((?:=|!=|>=|<=|>|<|LIKE|NOT LIKE|IN|NOT IN))\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))$/ui;
 
             if (!deleteRegex.test(command)) {
                 execError('Invalid format for delete command');
             }
 
-            return {command};
+            const deleteMatch = command.match(deleteRegex);
+
+            return {command, commandMatch: deleteMatch};
 
         case 'UPDATE':
 
-            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)|\d*\.?\d*)*)\s*WHERE (\w+)\s?((?:=|!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN))\s?((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?: ['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))/ui;
+            const updateRegex = /^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)|\d*\.?\d*)*)\s*WHERE\s*(\w+)\s*((?:=|!=|>=|<=|>|<|LIKE|NOT LIKE|IN|NOT IN))\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))/ui;
 
             if (!updateRegex.test(command)) {
                 execError('Invalid format for update command');
             }
 
-            return {command};
+            const updateMatch = command.match(updateRegex);
+
+            return {command, commandMatch: updateMatch};
 
         default:
             execError('Invalid command action: "' + action + '"')
