@@ -261,6 +261,5 @@ export async function executeCommand(rawCommand) {
         default:
 
             throw new Error('Invalid command action');
-
     }
 }

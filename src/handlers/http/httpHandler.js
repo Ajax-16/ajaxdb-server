@@ -1,6 +1,6 @@
 import { pascalCaseToCamelCase } from "../../utils/string.js";
 import { statusCodes } from "./lib/httpStatusCodes.js";
-import { ormParse } from "../../utils/array.js";
+import { ormParse } from "../../utils/orm.js";
 import { executeCommand } from "../nue/commandHandler.js";
 
 export function getHttpRequest(payload) {
