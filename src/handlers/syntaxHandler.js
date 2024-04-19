@@ -18,6 +18,42 @@ export function verifySyntax(command) {
             }
             return {command};
 
+        case 'BEGIN':
+
+        const beginRegex = /^\s*BEGIN\s+(TRANSACTION)\s*$/ui;
+
+        if (!beginRegex.test(command)) {
+            execError('Invalid format for finding command');
+        }
+
+        const beginMatch = command.match(beginRegex);
+
+        return {command, commandMatch: beginMatch};
+
+        case 'END':
+
+        const endRegex = /^\s*END\s+(TRANSACTION)\s*$/ui;
+
+        if (!endRegex.test(command)) {
+            execError('Invalid format for finding command');
+        }
+
+        const endMatch = command.match(endRegex);
+
+        return {command, commandMatch: endMatch};
+
+        case 'ROLLBACK':
+
+        const rollbackRegex = /^\s*ROLLBACK\s*$/ui;
+
+        if (!rollbackRegex.test(command)) {
+            execError('Invalid format for finding command');
+        }
+
+        const rollbackMatch = command.match(rollbackRegex);
+
+        return {command, commandMatch: rollbackMatch};
+
         case 'DROP':
 
             const dropElement = commandParts[1];

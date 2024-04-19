@@ -4,21 +4,69 @@ import { cleanColumns } from "../../utils/string.js";
 import { clean } from "../../utils/string.js";
 
 let currentDB = 'placeholder';
+let dbName = ''
+let transactionStatus = true;
+let result;
 
 export async function executeCommand(rawCommand) {
 
     let { commandMatch, command } = verifySyntax(rawCommand);
 
     const commandParts = command.split(' ');
-    const action = commandParts[0].toUpperCase();
+    const action = commandParts[0].toUpperCase().trim();
     const tableName = commandParts[2];
 
     switch (action) {
         case 'INIT':
-            const dbName = commandParts[1].split(';').shift();
+            dbName = commandParts[1].split(';').shift();
             currentDB = new DB(dbName, 4);
             await currentDB.init();
-            return `Using database: ${dbName}`;
+            result = `Using database: ${dbName}`;
+            break;
+
+        case 'BEGIN':
+
+        if (!(currentDB instanceof DB)) {
+            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+        }
+
+        if(commandMatch[1].toUpperCase()==='TRANSACTION'){
+            transactionStatus = false;
+        }
+
+        result = 'Transaction began'
+
+        break;
+
+        case 'END':
+
+        if (!(currentDB instanceof DB)) {
+            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+        }
+
+        if(commandMatch[1].toUpperCase()==='TRANSACTION'){
+            transactionStatus = true;
+        }
+
+        result = 'Transaction ended'
+
+        break;
+
+        case 'ROLLBACK':
+
+        if (!(currentDB instanceof DB)) {
+            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+        }
+
+        if(transactionStatus === true) {
+            result = 'No transactions in progress'
+            break;
+        }
+        await currentDB.init();
+        transactionStatus = true;
+
+        result = 'The transaction has been rolled back'
+        break;
 
         case 'CREATE':
             if (!(currentDB instanceof DB)) {
@@ -39,7 +87,8 @@ export async function executeCommand(rawCommand) {
                     columns.splice(columns.indexOf(element), 1);
                 }
             });
-            return await currentDB.createTable({ tableName, primaryKey, columns });
+            result = await currentDB.createTable({ tableName, primaryKey, columns });
+            break;
 
         case 'INSERT':
             if (!(currentDB instanceof DB)) {
@@ -70,12 +119,13 @@ export async function executeCommand(rawCommand) {
                     throw new Error('INSERT command requires a VALUES clause with parameters.');
                 }
                 const cleanedValues = cleanValues(insertColumns);
-                return await currentDB.insert({ tableName, values: cleanedValues });
+                result = await currentDB.insert({ tableName, values: cleanedValues });
             } else {
                 const cleanedColumns = insertColumns.split(',').map(value => clean(value.trim()));
                 const cleanedValues = cleanValues(insertValues);
-                return await currentDB.insert({ tableName, columns: cleanedColumns, values: cleanedValues });
+                result = await currentDB.insert({ tableName, columns: cleanedColumns, values: cleanedValues });
             }
+            break;
 
         case 'FIND':
             if (!(currentDB instanceof DB)) {
@@ -127,7 +177,8 @@ export async function executeCommand(rawCommand) {
                 findQueryObject.asc = false;
             }
 
-            return await currentDB.find(findQueryObject);
+            result = await currentDB.find(findQueryObject);
+            break;
 
         case 'DESCRIBE':
 
@@ -140,14 +191,14 @@ export async function executeCommand(rawCommand) {
                         throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
                     }
 
-                    return currentDB.describeOneTable(commandParts[2].trim());
-
+                    result = currentDB.describeOneTable(commandParts[2].trim());
+                    break;
                 case 'DATABASE':
 
-                    return describeDatabase(currentDB, commandParts[2].trim())
-
+                    result = describeDatabase(currentDB, commandParts[2].trim())
+                    break;
             }
-
+            break;
         case 'DROP':
 
             const dropElement = commandParts[1];
@@ -155,16 +206,17 @@ export async function executeCommand(rawCommand) {
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
 
-                    return await dropDb(commandParts[2].trim());
-
+                    result = await dropDb(commandParts[2].trim());
+                    break;
                 case 'TABLE':
                     if (!(currentDB instanceof DB)) {
                         throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
                     }
 
-                    return await currentDB.dropTable(commandParts[2].trim());
-
+                    result = await currentDB.dropTable(commandParts[2].trim());
+                    break;
             }
+            break;
 
         case 'DELETE':
             if (!(currentDB instanceof DB)) {
@@ -189,20 +241,21 @@ export async function executeCommand(rawCommand) {
             }
 
             if (deleteWhereField === 'PRIMARY_KEY') {
-                return await currentDB.delete({
+                result = await currentDB.delete({
                     tableName: deleteTableName,
                     condition: undefined,
                     operator: deleteOperator,
                     conditionValue: deleteConditionValue
                 });
             } else {
-                return await currentDB.delete({
+                result = await currentDB.delete({
                     tableName: deleteTableName,
                     condition: deleteWhereField,
                     operator: deleteOperator,
                     conditionValue: deleteConditionValue
                 });
             }
+            break;
 
         case 'UPDATE':
             if (!(currentDB instanceof DB)) {
@@ -239,7 +292,7 @@ export async function executeCommand(rawCommand) {
 
             // Perform the update operation
             if (updateCondition === 'PRIMARY_KEY') {
-                return await currentDB.update({
+                result = await currentDB.update({
                     tableName: updateTableName,
                     set: setArray,
                     setValues: cleanedSetValuesArray,
@@ -248,7 +301,7 @@ export async function executeCommand(rawCommand) {
                     conditionValue: updateConditionValue
                 });
             } else {
-                return await currentDB.update({
+                result = await currentDB.update({
                     tableName: updateTableName,
                     set: setArray,
                     setValues: cleanedSetValuesArray,
@@ -257,9 +310,16 @@ export async function executeCommand(rawCommand) {
                     conditionValue: updateConditionValue
                 });
             }
+            break;
 
         default:
-
             throw new Error('Invalid command action');
     }
+
+    if(transactionStatus) {
+        await currentDB.save();
+    }
+
+    return result;
+
 }
