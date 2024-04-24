@@ -1,9 +1,6 @@
 export const requestHeaderDictionary = {
-    Status: {
-        type: String
-    },
     Save: {
-        type: Boolean,
+        type: Boolean
     },
     Authorization: {
         type: String

@@ -7,27 +7,37 @@ import { createNueResponse } from './messageHandler.js';
 let currentDB = 'placeholder';
 let dbName = ''
 let result;
-let save = false;
+let insertedElements = 0;
 
 export async function handleNueRequest(headers, body) {
     try {
-        handleRequestHeaders(headers);
-        
+        handlePreRequestHeaders(headers);
         if (body) {
-            return createNueResponse({ Status: "OK"}, await executeCommand(body));
+            const res = createNueResponse({ Status: "OK"}, await executeCommand(body));
+            handlePostRequestHeaders(headers);
+            return res;
         }
-        return createNueResponse({ Status: "OK" })
-
+        const res = createNueResponse({ Status: "OK" })
+        handlePostRequestHeaders(headers);
+        return res;
     } catch (err) {
         return createNueResponse({ Status: "ERROR" }, err.message);
     }
 }
 
-async function handleRequestHeaders (headers) {
+async function handlePreRequestHeaders (headers) {
+    
+}
+
+async function handlePostRequestHeaders (headers) {
     for (const header in headers) {
         switch (header) {
             case "Save":
-                save = true;
+                if (!(currentDB instanceof DB)) {
+                    throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+                }
+                await currentDB.save();
+
             break;
             
             case "Authorization":
@@ -303,11 +313,6 @@ async function executeCommand(rawCommand) {
 
         default:
             throw new Error('Invalid command action');
-    }
-
-    if(save) {
-        await currentDB.save();
-        save = false;
     }
 
     return result;
