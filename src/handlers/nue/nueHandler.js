@@ -31,7 +31,7 @@ async function handleRequestHeaders (headers) {
             break;
             
             case "Authorization":
-
+                
             break;
         }
     }
