@@ -2,13 +2,42 @@ import { DB, dropDb, describeDatabase } from 'nuedb_core';
 import { verifySyntax } from '../syntaxHandler.js';
 import { cleanColumns } from "../../utils/string.js";
 import { clean } from "../../utils/string.js";
+import { createNueResponse } from './messageHandler.js';
 
 let currentDB = 'placeholder';
 let dbName = ''
-let transactionStatus = true;
 let result;
+let save = false;
 
-export async function executeCommand(rawCommand) {
+export async function handleNueRequest(headers, body) {
+    try {
+        handleRequestHeaders(headers);
+        
+        if (body) {
+            return createNueResponse({ Status: "OK"}, await executeCommand(body));
+        }
+        return createNueResponse({ Status: "OK" })
+
+    } catch (err) {
+        return createNueResponse({ Status: "ERROR" }, err.message);
+    }
+}
+
+async function handleRequestHeaders (headers) {
+    for (const header in headers) {
+        switch (header) {
+            case "Save":
+                save = true;
+            break;
+            
+            case "Authorization":
+
+            break;
+        }
+    }
+}
+
+async function executeCommand(rawCommand) {
 
     let { commandMatch, command } = verifySyntax(rawCommand);
 
@@ -18,55 +47,15 @@ export async function executeCommand(rawCommand) {
 
     switch (action) {
         case 'INIT':
+            if (currentDB instanceof DB) {
+                await currentDB.save();
+            }
+
             dbName = commandParts[1].split(';').shift();
             currentDB = new DB(dbName, 4);
             await currentDB.init();
             result = `Using database: ${dbName}`;
             break;
-
-        case 'BEGIN':
-
-        if (!(currentDB instanceof DB)) {
-            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
-        }
-
-        if(commandMatch[1].toUpperCase()==='TRANSACTION'){
-            transactionStatus = false;
-        }
-
-        result = 'Transaction began'
-
-        break;
-
-        case 'END':
-
-        if (!(currentDB instanceof DB)) {
-            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
-        }
-
-        if(commandMatch[1].toUpperCase()==='TRANSACTION'){
-            transactionStatus = true;
-        }
-
-        result = 'Transaction ended'
-
-        break;
-
-        case 'ROLLBACK':
-
-        if (!(currentDB instanceof DB)) {
-            throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
-        }
-
-        if(transactionStatus === true) {
-            result = 'No transactions in progress'
-            break;
-        }
-        await currentDB.init();
-        transactionStatus = true;
-
-        result = 'The transaction has been rolled back'
-        break;
 
         case 'CREATE':
             if (!(currentDB instanceof DB)) {
@@ -148,8 +137,8 @@ export async function executeCommand(rawCommand) {
                     const divisorElement = join.split(/\s*on\s*/i);
                     const joinElement = {
                         referenceTable: [...divisorElement].shift(),
-                        columnName: [...divisorElement].pop().split('=').shift().trim(), 
-                        referenceColumn: [...divisorElement].pop().split('=').pop().trim(), 
+                        columnName: [...divisorElement].pop().split('=').shift().trim(),
+                        referenceColumn: [...divisorElement].pop().split('=').pop().trim(),
                     }
                     return joinElement
                 });
@@ -316,8 +305,9 @@ export async function executeCommand(rawCommand) {
             throw new Error('Invalid command action');
     }
 
-    if(transactionStatus) {
+    if(save) {
         await currentDB.save();
+        save = false;
     }
 
     return result;

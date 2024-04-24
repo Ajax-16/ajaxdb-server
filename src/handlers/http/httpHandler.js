@@ -1,7 +1,7 @@
 import { pascalCaseToCamelCase } from "../../utils/string.js";
 import { statusCodes } from "./lib/httpStatusCodes.js";
 import { ormParse } from "../../utils/orm.js";
-import { executeCommand } from "../nue/commandHandler.js";
+import { handleNueRequest } from "../nue/nueHandler.js";
 
 export function getHttpRequest(payload) {
     payload = payload.toString();
@@ -118,7 +118,7 @@ export async function router({ method, route = '/', params, body }) {
 
         case 'GET':
 
-            await executeCommand(`INIT ${database}`);
+            await handleNueRequest([], `INIT ${database}`);
 
             command = 'FIND ';
 
@@ -208,7 +208,7 @@ export async function router({ method, route = '/', params, body }) {
                         throw new Error('No name specification for new table');
                     }
 
-                    await executeCommand(`INIT ${database}`);
+                    await handleNueRequest([], `INIT ${database}`);
 
                     command += `CREATE TABLE ${body.name} (${body.primaryKey} as PRIMARY_KEY`
 
@@ -225,7 +225,7 @@ export async function router({ method, route = '/', params, body }) {
                 }
             } else {
 
-                await executeCommand(`INIT ${database}`);
+                await handleNueRequest([], `INIT ${database}`);
 
                 command = `INSERT INTO ${table} (`
 
@@ -272,7 +272,7 @@ export async function router({ method, route = '/', params, body }) {
                 // TODO: Edición de una tabla (Edición de las columnas de una tabla)
             } else {
 
-                await executeCommand(`INIT ${database}`);
+                await handleNueRequest([], `INIT ${database}`);
 
                 command = `UPDATE ${table} SET `
 
@@ -305,7 +305,7 @@ export async function router({ method, route = '/', params, body }) {
                 command = `DROP DATABASE ${database}`;
             } else {
 
-                await executeCommand(`INIT ${database}`);
+                await handleNueRequest([], `INIT ${database}`);
 
                 command = `DELETE FROM ${table}`
 

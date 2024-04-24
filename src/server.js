@@ -1,7 +1,8 @@
 import net from 'net';
 import dotenv from 'dotenv';
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
-import { executeCommand } from './handlers/nue/commandHandler.js';
+import { handleNueRequest } from './handlers/nue/nueHandler.js';
+import { createNueResponse, parseNueRequest } from './handlers/nue/messageHandler.js';
 
 let PORT, CHUNK_SIZE;
 
@@ -16,12 +17,12 @@ if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
 
 const server = net.createServer(async (socket) => {
   socket.on('data', async (data) => {
-    
+
     const isHttpRequest = data.toString().split('\r\n').shift().includes('HTTP')
     const isHandShake = data.toString().startsWith('NUE\r\n\r\nClient Hello')
     const isNueRequest = data.toString().startsWith('NUE');
 
-    if(isHandShake) {
+    if (isHandShake) {
       await handleHandShake(socket, data);
     } else if (isHttpRequest) {
       await handleHTTP(socket, data);
@@ -34,30 +35,31 @@ const server = net.createServer(async (socket) => {
 });
 
 async function handleHandShake(socket, data) {
-    let message = data.toString().trim().replace(/NUE\r\n\r\n/g, '');
-    // TODO -> Comprobar cabeceras de conexión inicial (credenciales, archivos...) en las cabeceras en un futuro en vez de unicamente el mensaje.
-    if(message === 'Client Hello') {
-      socket.write('Server Hello');
-    }else {
-      socket.write('Connection rejected');
-    }
+  let message = data.toString().trim().replace(/NUE\r\n\r\n/g, '');
+  // TODO -> Comprobar cabeceras de conexión inicial (credenciales, archivos...) en las cabeceras en un futuro en vez de unicamente el mensaje.
+  if (message === 'Client Hello') {
+    socket.write('Server Hello');
+  } else {
+    socket.write('Connection rejected');
+  }
 }
 
 async function handleTCP(socket, data) {
-  let command = data.toString().trim();
   try {
-    command = command.replace(/NUE\r\n\r\n/g, '');
-    const result = await executeCommand(command);
+    const { headers, body } = parseNueRequest(data);
+    const result = await handleNueRequest(headers, body);
     if (result.length <= CHUNK_SIZE) {
-      socket.write(JSON.stringify(result));
+      socket.write(result.toString());
       socket.write('END_OF_RESPONSE');
     } else {
-      sendLargeResponse(socket, JSON.stringify(result));
+      sendLargeResponse(socket, result.toString());
     }
-  } catch (error) {
-    console.error('Error executing command:', error.message);
-    sendLargeResponse(socket, JSON.stringify({ error: error.message }));
+  }catch (err) {
+    const errResult = createNueResponse({ Status: "ERROR" }, err.message);
+    socket.write(errResult.toString());
+    socket.write('END_OF_RESPONSE');
   }
+
 }
 
 async function handleHTTP(socket, data) {
@@ -66,23 +68,23 @@ async function handleHTTP(socket, data) {
 
     const request = getHttpRequest(data);
 
-    if(request.method === 'OPTIONS') {
-      socket.write(createHttpResponse({statusCode:200, customHeaders: {Allow: 'GET, POST, DELETE, PUT'}}))
-    } 
-    else if(request.method === 'HEAD') {
+    if (request.method === 'OPTIONS') {
+      socket.write(createHttpResponse({ statusCode: 200, customHeaders: { Allow: 'GET, POST, DELETE, PUT' } }))
+    }
+    else if (request.method === 'HEAD') {
       socket.write(createHttpResponse({ statusCode: 200 }));
     }
     else {
-      if(request.route !== '/favicon.ico') {
+      if (request.route !== '/favicon.ico') {
 
         const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
-  
-        const result = await executeCommand(routedRequest);
-    
+
+        const result = await handleNueRequest([], routedRequest);
+
         socket.write(createHttpResponse({ payload: result, statusCode: 200 }));
-      
-      }else {
-        socket.write(createHttpResponse({statusCode: 400}));
+
+      } else {
+        socket.write(createHttpResponse({ statusCode: 400 }));
       }
     }
 
@@ -97,7 +99,7 @@ function sendLargeResponse(socket, response) {
   for (let i = 0; i < response.length; i += CHUNK_SIZE) {
     const chunk = response.slice(i, i + CHUNK_SIZE);
     socket.write(chunk);
-    
+
   }
   socket.write('END_OF_RESPONSE');
 }

@@ -18,41 +18,18 @@ export function verifySyntax(command) {
             }
             return {command};
 
-        case 'BEGIN':
+        // Esto se convertirá en NUE HEADERS
+        case 'SAVE':
 
-        const beginRegex = /^\s*BEGIN\s+(TRANSACTION)\s*$/ui;
+        const saveRegex = /^\s*SAVE\s*$/ui;
 
-        if (!beginRegex.test(command)) {
+        if (!saveRegex.test(command)) {
             execError('Invalid format for finding command');
         }
 
-        const beginMatch = command.match(beginRegex);
+        const saveMatch = command.match(saveRegex);
 
-        return {command, commandMatch: beginMatch};
-
-        case 'END':
-
-        const endRegex = /^\s*END\s+(TRANSACTION)\s*$/ui;
-
-        if (!endRegex.test(command)) {
-            execError('Invalid format for finding command');
-        }
-
-        const endMatch = command.match(endRegex);
-
-        return {command, commandMatch: endMatch};
-
-        case 'ROLLBACK':
-
-        const rollbackRegex = /^\s*ROLLBACK\s*$/ui;
-
-        if (!rollbackRegex.test(command)) {
-            execError('Invalid format for finding command');
-        }
-
-        const rollbackMatch = command.match(rollbackRegex);
-
-        return {command, commandMatch: rollbackMatch};
+        return {command, commandMatch: saveMatch};
 
         case 'DROP':
 
