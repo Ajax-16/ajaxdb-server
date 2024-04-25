@@ -113,7 +113,7 @@ export function verifySyntax(command) {
 
         case 'INSERT':
 
-            const regex = /INSERT\s+INTO\s+\w+\s*(?:\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*(?:VALUES\s*\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*/ui;
+            const regex = /INSERT\s+INTO\s+\w+\s*(?:\(([^()]+)\))?\s*(?:VALUES\s*\(([^()]+)\))?\s*/ui;
 
             if (!regex.test(command)) {
                 execError('Invalid format for insert command');

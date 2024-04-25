@@ -92,12 +92,8 @@ async function executeCommand(rawCommand) {
                 throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
             }
 
-            const regex = /INSERT\s+INTO\s+\w+\s*(?:\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*(?:VALUES\s*\((\s*.+?\s*(?:,\s*.+?\s*)*)\))?\s*/ui;
-
-            const insertMatch = command.match(regex);
-
-            const insertColumns = insertMatch[1];
-            const insertValues = insertMatch[2];
+            const insertColumns = commandMatch[1];
+            const insertValues = commandMatch[2];
 
             const cleanValues = (values) => {
                 const regex = /(?:'([^']+)'|"([^"]+)")|([^,]+)/g;
