@@ -7,7 +7,6 @@ import { createNueResponse } from './messageHandler.js';
 let currentDB = 'placeholder';
 let dbName = ''
 let result;
-let insertedElements = 0;
 
 export async function handleNueRequest(headers, body) {
     try {
@@ -17,7 +16,7 @@ export async function handleNueRequest(headers, body) {
             handlePostRequestHeaders(headers);
             return res;
         }
-        const res = createNueResponse({ Status: "OK" })
+        const res = createNueResponse({ Status: "OK" });
         handlePostRequestHeaders(headers);
         return res;
     } catch (err) {
@@ -33,10 +32,9 @@ async function handlePostRequestHeaders (headers) {
     for (const header in headers) {
         switch (header) {
             case "Save":
-                if (!(currentDB instanceof DB)) {
-                    throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+                if (currentDB instanceof DB) {
+                    await currentDB.save();
                 }
-                await currentDB.save();
 
             break;
             
@@ -143,8 +141,8 @@ async function executeCommand(rawCommand) {
             }
 
             if (commandMatch[4]) {
-                const joins = commandMatch[4].split(/\w+\s*join\s*/i).splice(1).map(join => {
-                    const divisorElement = join.split(/\s*on\s*/i);
+                const joins = commandMatch[4].split(/\w+\s*\sjoin\s\s*/i).splice(1).map(join => {
+                    const divisorElement = join.split(/\s*\son\s\s*/i);
                     const joinElement = {
                         referenceTable: [...divisorElement].shift(),
                         columnName: [...divisorElement].pop().split('=').shift().trim(),
