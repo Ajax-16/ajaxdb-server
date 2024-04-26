@@ -1,4 +1,4 @@
-import net, { SocketAddress } from 'net';
+import net from 'net';
 import dotenv from 'dotenv';
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
 import { handleNueRequest } from './handlers/nue/nueHandler.js';
@@ -19,37 +19,24 @@ const server = net.createServer(async (socket) => {
 
   const handleData = async (data) => {
     const isHttpRequest = data.toString().split('\r\n').shift().includes('HTTP');
-    const isHandShake = data.toString().startsWith('NUE\r\n\r\nClient Hello');
     const isNueRequest = data.toString().startsWith('NUE');
 
-    if (isHandShake) {
-      await handleHandShake(socket, data);
-    } else if (isHttpRequest) {
+    if (isHttpRequest) {
       await handleHTTP(socket, data);
     } else if (isNueRequest) {
-      await handleTCP(socket, data);
+      await handleNUE(socket, data);
     }
   };
 
   socket.on('data', handleData);
 
-  socket.on('end', () => { console.log("client disconnected") });
+  socket.on('end', () => { });
 
-  socket.on('error', ()=> { console.log("client disconnected prematurely")})
+  socket.on('error', ()=> { })
 
 });
 
-async function handleHandShake(socket, data) {
-  let message = data.toString().trim().replace(/NUE\r\n\r\n/g, '');
-  // TODO -> Comprobar cabeceras de conexión inicial (credenciales, archivos...) en las cabeceras en un futuro en vez de unicamente el mensaje.
-  if (message === 'Client Hello') {
-    socket.write('Server Hello');
-  } else {
-    socket.write('Connection rejected');
-  }
-}
-
-async function handleTCP(socket, data) {
+async function handleNUE(socket, data) {
   try {
     const { headers, body } = parseNueRequest(data);
     const result = await handleNueRequest(headers, body);
@@ -104,7 +91,6 @@ function sendLargeResponse(socket, response) {
   for (let i = 0; i < response.length; i += CHUNK_SIZE) {
     const chunk = response.slice(i, i + CHUNK_SIZE);
     socket.write(chunk);
-
   }
   socket.write('END_OF_RESPONSE');
 }

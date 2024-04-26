@@ -7,6 +7,7 @@ import { createNueResponse } from './messageHandler.js';
 let currentDB = 'placeholder';
 let dbName = ''
 let result;
+let connectionIds = [];
 
 export async function handleNueRequest(headers, body) {
     try {
@@ -25,7 +26,13 @@ export async function handleNueRequest(headers, body) {
 }
 
 async function handlePreRequestHeaders (headers) {
-    
+    for (const header in headers) {
+        switch (header) {
+            case "HandShake":
+                
+            break;
+        }
+    }
 }
 
 async function handlePostRequestHeaders (headers) {
@@ -36,10 +43,6 @@ async function handlePostRequestHeaders (headers) {
                     await currentDB.save();
                 }
 
-            break;
-            
-            case "Authorization":
-                
             break;
         }
     }
