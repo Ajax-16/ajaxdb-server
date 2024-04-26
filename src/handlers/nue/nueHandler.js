@@ -7,15 +7,19 @@ import { createNueResponse } from './messageHandler.js';
 let currentDB = 'placeholder';
 let dbName = ''
 let result;
-let connectionIds = [];
 
 export async function handleNueRequest(headers, body) {
     try {
         handlePreRequestHeaders(headers);
         if (body) {
-            const res = createNueResponse({ Status: "OK"}, await executeCommand(body));
+            const allRequests = body.split(';')
+            const allResponses = []
+            for(const req of allRequests) {
+                allResponses.push(await executeCommand(req))
+            }
+            const finalRes = createNueResponse({ Status: "OK"}, allResponses);
             handlePostRequestHeaders(headers);
-            return res;
+            return finalRes;
         }
         const res = createNueResponse({ Status: "OK" });
         handlePostRequestHeaders(headers);
@@ -29,7 +33,7 @@ async function handlePreRequestHeaders (headers) {
     for (const header in headers) {
         switch (header) {
             case "HandShake":
-                
+
             break;
         }
     }
