@@ -1,4 +1,4 @@
-import net from 'net';
+import net, { SocketAddress } from 'net';
 import dotenv from 'dotenv';
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
 import { handleNueRequest } from './handlers/nue/nueHandler.js';
@@ -16,10 +16,10 @@ if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
 }
 
 const server = net.createServer(async (socket) => {
-  socket.on('data', async (data) => {
 
-    const isHttpRequest = data.toString().split('\r\n').shift().includes('HTTP')
-    const isHandShake = data.toString().startsWith('NUE\r\n\r\nClient Hello')
+  const handleData = async (data) => {
+    const isHttpRequest = data.toString().split('\r\n').shift().includes('HTTP');
+    const isHandShake = data.toString().startsWith('NUE\r\n\r\nClient Hello');
     const isNueRequest = data.toString().startsWith('NUE');
 
     if (isHandShake) {
@@ -29,9 +29,14 @@ const server = net.createServer(async (socket) => {
     } else if (isNueRequest) {
       await handleTCP(socket, data);
     }
+  };
 
-    socket.on('end', () => { });
-  });
+  socket.on('data', handleData);
+
+  socket.on('end', () => { console.log("client disconnected") });
+
+  socket.on('error', ()=> { console.log("client disconnected prematurely")})
+
 });
 
 async function handleHandShake(socket, data) {
