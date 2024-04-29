@@ -25,7 +25,7 @@ export async function handleNueRequest(headers, body) {
         handlePostRequestHeaders(headers);
         return res;
     } catch (err) {
-        return createNueResponse({ Status: "ERROR" }, err.message);
+        return createNueResponse({ Status: "ERROR" }, [err.message]);
     }
 }
 
@@ -33,7 +33,7 @@ async function handlePreRequestHeaders (headers) {
     for (const header in headers) {
         switch (header) {
             case "HandShake":
-
+                
             break;
         }
     }

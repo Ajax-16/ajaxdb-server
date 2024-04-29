@@ -47,7 +47,7 @@ async function handleNUE(socket, data) {
       sendLargeResponse(socket, result.toString());
     }
   }catch (err) {
-    const errResult = createNueResponse({ Status: "ERROR" }, err.message);
+    const errResult = createNueResponse({ Status: "ERROR" }, [err.message]);
     socket.write(errResult.toString());
     socket.write('END_OF_RESPONSE');
   }
