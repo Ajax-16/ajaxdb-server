@@ -148,8 +148,8 @@ async function executeCommand(rawCommand) {
                     const divisorElement = join.split(/\s*\son\s\s*/i);
                     const joinElement = {
                         referenceTable: [...divisorElement].shift(),
-                        columnName: [...divisorElement].pop().split('=').shift().trim(),
-                        referenceColumn: [...divisorElement].pop().split('=').pop().trim(),
+                        firstColumn: [...divisorElement].pop().split('=').shift().trim(),
+                        secondColumn: [...divisorElement].pop().split('=').pop().trim(),
                     }
                     return joinElement
                 });

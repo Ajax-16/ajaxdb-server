@@ -1,1 +1,1 @@
-[[["category",{"elements":3}],["id","name","popularity"],[0,"jardineria",5],[1,"juego",8],[2,"comida",10]],[["user",{"elements":0}],["id","username","password","category_id"]]]
+[[["category",{"elements":2}],["id","name","popularity"],[0,"juegos",10],[1,"jardineria",8]],[["products",{"elements":4}],["id","name","price","category_id"],[0,"cod",30,0],[1,"pokemon",35,0],[2,"rosa",3,1],[3,"clavel",2.5,1]]]
