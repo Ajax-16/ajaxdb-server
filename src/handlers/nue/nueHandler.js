@@ -138,9 +138,9 @@ async function executeCommand(rawCommand) {
                 tableName: commandMatch[3],
                 condition: commandMatch[5],
                 operator: commandMatch[6],
-                offset: commandMatch[8],
-                limit: commandMatch[9],
-                orderBy: commandMatch[10],
+                orderBy: commandMatch[8],
+                limit: commandMatch[10],
+                offset: commandMatch[11]
             }
 
             if (commandMatch[4]) {
@@ -171,7 +171,7 @@ async function executeCommand(rawCommand) {
             }
 
             // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
-            if (commandMatch[11] === undefined || commandMatch[11].toUpperCase() === 'ASC') {
+            if (commandMatch[9] === undefined || commandMatch[9].toUpperCase() === 'ASC') {
                 findQueryObject.asc = true;
             } else {
                 findQueryObject.asc = false;
