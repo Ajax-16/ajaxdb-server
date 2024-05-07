@@ -1,7 +1,7 @@
 import net from 'net';
 import dotenv from 'dotenv';
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
-import { handleNueRequest } from './handlers/nue/nueHandler.js';
+import { executeCommand, handleNueRequest } from './handlers/nue/nueHandler.js';
 import { createNueResponse, parseNueRequest } from './handlers/nue/messageHandler.js';
 
 let PORT, CHUNK_SIZE;
@@ -71,7 +71,7 @@ async function handleHTTP(socket, data) {
 
         const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
 
-        const result = await handleNueRequest([], routedRequest);
+        let result = await executeCommand(routedRequest);
 
         socket.write(createHttpResponse({ payload: result, statusCode: 200 }));
 

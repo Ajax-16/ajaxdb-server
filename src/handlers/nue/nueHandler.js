@@ -53,7 +53,7 @@ async function handlePostRequestHeaders(headers) {
     }
 }
 
-async function executeCommand(rawCommand) {
+export async function executeCommand(rawCommand) {
 
     await sysDB.init('system', 'nue');
 
