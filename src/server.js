@@ -10,7 +10,7 @@ if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
   PORT = process.env.PORT || 3000;
   CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
 } else {
-  dotenv.config({ path: './.env' || './.env.example' })
+  dotenv.config({ path: '../.env' || '../.env.example' })
   PORT = process.env.PORT || 3000;
   CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
 }
@@ -81,7 +81,6 @@ async function handleHTTP(socket, data) {
     }
 
   } catch (error) {
-    console.error('Error executing:', error.message);
     socket.write(createHttpResponse({ payload: { error: error.message }, statusCode: 400 }));
   }
 

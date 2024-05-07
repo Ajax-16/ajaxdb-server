@@ -1,10 +1,10 @@
-import { DB, dropDb, describeDatabase } from 'nuedb_core';
+import { DB, dropDb, describeDatabase, createDb } from 'nuedb_core';
 import { verifySyntax } from '../syntaxHandler.js';
-import { cleanColumns } from "../../utils/string.js";
 import { clean } from "../../utils/string.js";
 import { createNueResponse } from './messageHandler.js';
 
 let currentDB = 'placeholder';
+const sysDB = new DB();
 let dbName = ''
 let result;
 
@@ -14,10 +14,10 @@ export async function handleNueRequest(headers, body) {
         if (body) {
             const allRequests = body.split(';')
             const allResponses = []
-            for(const req of allRequests) {
+            for (const req of allRequests) {
                 allResponses.push(await executeCommand(req))
             }
-            const finalRes = createNueResponse({ Status: "OK"}, allResponses);
+            const finalRes = createNueResponse({ Status: "OK" }, allResponses);
             handlePostRequestHeaders(headers);
             return finalRes;
         }
@@ -29,30 +29,33 @@ export async function handleNueRequest(headers, body) {
     }
 }
 
-async function handlePreRequestHeaders (headers) {
+async function handlePreRequestHeaders(headers) {
     for (const header in headers) {
         switch (header) {
             case "HandShake":
-                
-            break;
+
+                break;
         }
     }
 }
 
-async function handlePostRequestHeaders (headers) {
+async function handlePostRequestHeaders(headers) {
     for (const header in headers) {
         switch (header) {
             case "Save":
                 if (currentDB instanceof DB) {
                     await currentDB.save();
                 }
+                await sysDB.save();
 
-            break;
+                break;
         }
     }
 }
 
 async function executeCommand(rawCommand) {
+
+    await sysDB.init('system', 'nue');
 
     let { commandMatch, command } = verifySyntax(rawCommand);
 
@@ -67,31 +70,56 @@ async function executeCommand(rawCommand) {
             }
 
             dbName = commandParts[1].split(';').shift();
-            currentDB = new DB(dbName, 4);
-            await currentDB.init();
-            result = `Using database: ${dbName}`;
+            currentDB = new DB();
+            const init = await currentDB.init('data', dbName);
+            if (init) {
+                result = `Using database: ${dbName}`;
+            } else {
+                throw new Error(`Database ${dbName} doesn't exist.`);
+            }
             break;
 
         case 'CREATE':
-            if (!(currentDB instanceof DB)) {
-                throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+
+            const element = commandMatch[1];
+            const elementName = commandMatch[2].trim();
+
+            let parameters = commandMatch[3];
+
+            if (element && element.toUpperCase() === 'DATABASE') {
+                if (parameters) {
+                    throw new Error('Unexpected parameters on "CREATE DATABASE" instruction.');
+                }
+
+                await sysDB.insert({tableName: 'databases', values: [elementName]})
+
+                result = await createDb('data', elementName);
+
+            } else if (element && element.toUpperCase() === 'TABLE') {
+                if (!(currentDB instanceof DB)) {
+                    throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+                }
+                parameters = parameters.split(',');
+                let primaryKeyCount = 0;
+                let pk, pkPos;
+                for (let i = 0; i<parameters.length; i++) {
+                    const pkMatch = parameters[i].match(/^\s*(\w+)\s+as\s+primary_key\s*$/ui);
+                    if (pkMatch) {
+                        primaryKeyCount++;
+                        pk = pkMatch[1]
+                        pkPos = i;
+                    }else {
+                        parameters[i] = parameters[i].trim();
+                    }
+                }
+                if(primaryKeyCount>1) {
+                    throw new Error('Cannot specify more than one primary key on table')
+                }
+                parameters.splice(pkPos, 1)
+                
+                result = await currentDB.createTable({tableName: elementName, primaryKey: pk, columns: parameters})
             }
 
-            const columnsStartIndex = command.indexOf('(');
-            const columnsEndIndex = command.lastIndexOf(')');
-            let primaryKey = 'id';
-
-            const columns = cleanColumns(command.substring(columnsStartIndex + 1, columnsEndIndex));
-
-            const searchPrimaryKey = cleanColumns(command.substring(columnsStartIndex + 1, columnsEndIndex));
-
-            searchPrimaryKey.forEach(element => {
-                if (element.trim().split(' ')[2] === 'PRIMARY_KEY') {
-                    primaryKey = element.trim().split(' ')[0];
-                    columns.splice(columns.indexOf(element), 1);
-                }
-            });
-            result = await currentDB.createTable({ tableName, primaryKey, columns });
             break;
 
         case 'INSERT':
@@ -206,7 +234,7 @@ async function executeCommand(rawCommand) {
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
 
-                    result = await dropDb(commandParts[2].trim());
+                    result = await dropDb('data', commandParts[2].trim());
                     break;
                 case 'TABLE':
                     if (!(currentDB instanceof DB)) {

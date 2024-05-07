@@ -54,62 +54,15 @@ export function verifySyntax(command) {
 
         case 'CREATE':
 
-            const createElement = commandParts[1];
+        const createRegex = /^\s*CREATE\s+(DATABASE|TABLE)\s+(\w+)\s*(?:\((\w+\s*(?:as\s+PRIMARY_KEY\s*)?(?:,\s*\w+\s*(?:as\s+PRIMARY_KEY\s*)?)*\s*)\))?$/ui;
 
-            switch (createElement.toUpperCase()) {
-                case 'TABLE':
+        if(!createRegex.test(command)) {
+            execError('Invalid format for create command')
+        }
 
-                    break;
+        const createMatch = command.match(createRegex);
 
-                default:
-                    execError('Element: ' + createElement + ' does not support the CREATE command.');
-            }
-
-            const tableName = commandParts[1];
-            const tableIsNumber = parseInt(tableName);
-            if (!isNaN(tableIsNumber)) {
-                execError('Invalid table name -> ' + tableName);
-            }
-
-            if (!filterCaracters(command, "(", 1) || !filterCaracters(command, ")", 1)) {
-                execError('Too many "(" or ")" characters in the command');
-            }
-
-            const createColumnsStartIndex = command.indexOf('(');
-            const createColumnsEndIndex = command.indexOf(')');
-
-            if (createColumnsStartIndex > createColumnsEndIndex || (createColumnsStartIndex === -1 || createColumnsEndIndex === -1)) {
-                execError('Column parameters on invalid format');
-            }
-
-            if (command.trim().length - createColumnsEndIndex !== 1) {
-                execError('Invalid final section');
-            }
-
-            const columns = cleanColumns(command
-                .substring(createColumnsStartIndex + 1, createColumnsEndIndex));
-
-            columns.forEach((column, index) => {
-                const words = column.trim().split(' ');
-
-                if (words.length > 1) {
-                    const modifier = words[1];
-
-                    if (modifier == 'as') {
-                        const modValue = words[2];
-
-                        if (modValue != 'PRIMARY_KEY') {
-                            execError('Unknown modifier value ' + modValue);
-                        }
-                    } else {
-                        execError(modifier + ' is not a valid modifier');
-                    }
-                } else if (words.length >= 4) {
-                    execError('Too many words in column ' + (index + 1).toString());
-                }
-            });
-
-            return {command};
+        return {command, commandMatch: createMatch};
 
         case 'INSERT':
 
@@ -140,7 +93,7 @@ export function verifySyntax(command) {
                 case 'DATABASE':
                 case 'TABLE':
                     return {command};
-
+                
                 default:
                     execError('Element: ' + describeElement + ' does not support the DESCRIBE command.');
             }
