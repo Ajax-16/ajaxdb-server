@@ -112,10 +112,12 @@ async function executeCommand(rawCommand) {
                         parameters[i] = parameters[i].trim();
                     }
                 }
+                if(primaryKeyCount>0) {
+                    parameters.splice(pkPos, 1)
+                }
                 if(primaryKeyCount>1) {
                     throw new Error('Cannot specify more than one primary key on table')
                 }
-                parameters.splice(pkPos, 1)
                 
                 result = await currentDB.createTable({tableName: elementName, primaryKey: pk, columns: parameters})
             }
