@@ -18,19 +18,6 @@ export function verifySyntax(command) {
             }
             return {command};
 
-        // Esto se convertirá en NUE HEADERS
-        case 'SAVE':
-
-        const saveRegex = /^\s*SAVE\s*$/ui;
-
-        if (!saveRegex.test(command)) {
-            execError('Invalid format for finding command');
-        }
-
-        const saveMatch = command.match(saveRegex);
-
-        return {command, commandMatch: saveMatch};
-
         case 'DROP':
 
             const dropElement = commandParts[1];
@@ -46,6 +33,8 @@ export function verifySyntax(command) {
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
                 case 'TABLE':
+                case 'TB':
+                case 'DB':
                     return {command};
 
                 default:
@@ -54,7 +43,7 @@ export function verifySyntax(command) {
 
         case 'CREATE':
 
-        const createRegex = /^\s*CREATE\s+(DATABASE|TABLE)\s+(\w+)\s*(?:\((\w+\s*(?:as\s+PRIMARY_KEY\s*)?(?:,\s*\w+\s*(?:as\s+PRIMARY_KEY\s*)?)*\s*)\))?$/ui;
+        const createRegex = /^\s*CREATE\s+(DATABASE|TABLE|DB|TB)\s+(\w+)\s*(?:\((\w+\s*(?:as\s+PRIMARY_KEY\s*)?(?:,\s*\w+\s*(?:as\s+PRIMARY_KEY\s*)?)*\s*)\))?$/ui;
 
         if(!createRegex.test(command)) {
             execError('Invalid format for create command')
@@ -78,6 +67,7 @@ export function verifySyntax(command) {
 
 
         case 'DESCRIBE':
+        case 'LS':
 
             const describeElement = commandParts[1];
 
@@ -92,12 +82,26 @@ export function verifySyntax(command) {
             switch (describeElement.toUpperCase()) {
                 case 'DATABASE':
                 case 'TABLE':
+                case 'TB':
+                case 'DB':
                     return {command};
                 
                 default:
                     execError('Element: ' + describeElement + ' does not support the DESCRIBE command.');
             }
 
+
+        case 'SHOW':
+
+            const showRegex = /^\s*SHOW\s+(?:DATABASES|DBS)(?:\s+LIKE\s+['"](%?[\w\s]+%?)['"])?$/ui;
+
+            if(!showRegex.test(command)) {
+                execError('Invalid format for show command');
+            }
+
+            const showMatch = command.match(showRegex);
+
+            return {command, commandMatch: showMatch};
 
         case 'FIND':
 

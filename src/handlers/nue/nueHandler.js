@@ -86,40 +86,43 @@ export async function executeCommand(rawCommand) {
 
             let parameters = commandMatch[3];
 
-            if (element && element.toUpperCase() === 'DATABASE') {
+            if (element && (element.toUpperCase() === 'DATABASE' || element.toUpperCase() === 'DB')) {
                 if (parameters) {
                     throw new Error('Unexpected parameters on "CREATE DATABASE" instruction.');
                 }
 
-                await sysDB.insert({tableName: 'databases', values: [elementName]})
+                await sysDB.insert({ tableName: 'databases', values: [elementName] })
 
                 result = await createDb('data', elementName);
 
-            } else if (element && element.toUpperCase() === 'TABLE') {
+            } else if (element && (element.toUpperCase() === 'TABLE' || element.toUpperCase() === 'TB')) {
                 if (!(currentDB instanceof DB)) {
                     throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
+                }
+                if (!parameters) {
+                    throw new Error('No parameters specified for create table command.')
                 }
                 parameters = parameters.split(',');
                 let primaryKeyCount = 0;
                 let pk, pkPos;
-                for (let i = 0; i<parameters.length; i++) {
+                for (let i = 0; i < parameters.length; i++) {
                     const pkMatch = parameters[i].match(/^\s*(\w+)\s+as\s+primary_key\s*$/ui);
                     if (pkMatch) {
                         primaryKeyCount++;
                         pk = pkMatch[1]
                         pkPos = i;
-                    }else {
+                    } else {
                         parameters[i] = parameters[i].trim();
                     }
                 }
-                if(primaryKeyCount>0) {
+                if (primaryKeyCount > 0) {
                     parameters.splice(pkPos, 1)
                 }
-                if(primaryKeyCount>1) {
-                    throw new Error('Cannot specify more than one primary key on table')
+                if (primaryKeyCount > 1) {
+                    throw new Error('Unable to specify more than one primary key by table.')
                 }
-                
-                result = await currentDB.createTable({tableName: elementName, primaryKey: pk, columns: parameters})
+
+                result = await currentDB.createTable({ tableName: elementName, primaryKey: pk, columns: parameters })
             }
 
             break;
@@ -211,12 +214,16 @@ export async function executeCommand(rawCommand) {
             break;
 
         case 'DESCRIBE':
+        case 'LS':
 
             const describeElement = commandParts[1];
-
+            if (!commandParts[2]) {
+                throw new Error("No parameter specified for describe command.")
+            }
             switch (describeElement.toUpperCase()) {
 
                 case 'TABLE':
+                case 'TB':
                     if (!(currentDB instanceof DB)) {
                         throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
                     }
@@ -224,21 +231,51 @@ export async function executeCommand(rawCommand) {
                     result = currentDB.describeOneTable(commandParts[2].trim());
                     break;
                 case 'DATABASE':
+                case 'DB':
 
                     result = describeDatabase(currentDB, commandParts[2].trim())
                     break;
             }
             break;
+
+        case 'SHOW':
+
+            const likeClause = commandMatch[1];
+
+            if(likeClause) {
+                result = sysDB.find({
+                    tableName: 'databases',
+                    condition: 'name',
+                    operator: 'LIKE',
+                    conditionValue: likeClause.trim()
+                })
+            }else {
+                result = sysDB.find({
+                    tableName: 'databases'
+                })
+            }
+
+        break;
+
         case 'DROP':
 
             const dropElement = commandParts[1];
 
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
+                case 'DB':
+
+                    await sysDB.delete({
+                        tableName: 'databases',
+                        condition: 'name',
+                        operator: '=',
+                        conditionValue: commandParts[2].trim()
+                    });
 
                     result = await dropDb('data', commandParts[2].trim());
                     break;
                 case 'TABLE':
+                case 'TB':
                     if (!(currentDB instanceof DB)) {
                         throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
                     }
