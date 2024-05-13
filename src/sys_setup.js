@@ -29,13 +29,13 @@ async function main() {
 
         await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'host', 'can_create', 'can_read', 'can_update', 'can_delete'] });
         const encryptedRootPasswd = bcrypt.hashSync(ROOT_PASSWORD, 8)
-        await sysDB.insert({ tableName: 'user', columns: ['username', 'password', 'host'], values: [ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
+        await sysDB.insert({ tableName: 'user', values: [ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
         
     } else if (!tableExists.has('user')) {
 
         await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'host', 'can_create', 'can_read', 'can_update', 'can_delete'] });
         const encryptedRootPasswd = bcrypt.hashSync(ROOT_PASSWORD, 8)
-        await sysDB.insert({ tableName: 'user', columns: ['username', 'password', 'host'], values: [ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
+        await sysDB.insert({ tableName: 'user', values: [ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
     
     } else if (!tableExists.has('databases')) {
 
