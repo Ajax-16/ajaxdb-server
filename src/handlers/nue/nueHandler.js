@@ -76,10 +76,6 @@ export async function executeCommand(rawCommand) {
 
     switch (action) {
         case 'INIT':
-            if (currentDB instanceof DB) {
-                await currentDB.save();
-            }
-
             dbName = commandParts[1].split(';').shift();
             currentDB = new DB();
             const init = await currentDB.init('data', dbName);
