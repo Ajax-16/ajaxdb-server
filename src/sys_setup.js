@@ -24,18 +24,23 @@ async function main() {
     const tableExists = new Set(sysDB.showAllTableNames());
 
     if (!tableExists.has('databases') && !tableExists.has('users')) {
-        await sysDB.createTable({ tableName: 'databases', columns: ['name'] });
-        await sysDB.createTable({ tableName: 'users', columns: ['username', 'password', 'role'] });
 
-        const encryptedRootPasswd = bcrypt.hashSync(ROOT_PASSWORD, 8)
-        await sysDB.insert({ tableName: 'users', columns: ['username', 'password', 'role'], values: [ROOT_USERNAME, encryptedRootPasswd, 'admin'] });
-    } else if (!tableExists.has('users')) {
-        await sysDB.createTable({ tableName: 'users', columns: ['username', 'password', 'role'] });
+        await sysDB.createTable({ tableName: 'database', columns: ['name'] });
 
+        await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'host', 'can_create', 'can_read', 'can_update', 'can_delete'] });
         const encryptedRootPasswd = bcrypt.hashSync(ROOT_PASSWORD, 8)
-        await sysDB.insert({ tableName: 'users', columns: ['username', 'password', 'role'], values: [ROOT_USERNAME, encryptedRootPasswd, 'admin'] });
+        await sysDB.insert({ tableName: 'user', columns: ['username', 'password', 'host'], values: [ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
+        
+    } else if (!tableExists.has('user')) {
+
+        await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'host', 'can_create', 'can_read', 'can_update', 'can_delete'] });
+        const encryptedRootPasswd = bcrypt.hashSync(ROOT_PASSWORD, 8)
+        await sysDB.insert({ tableName: 'user', columns: ['username', 'password', 'host'], values: [ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
+    
     } else if (!tableExists.has('databases')) {
+
         await sysDB.createTable({ tableName: 'databases', columns: ['name'] });
+    
     }
 
     await sysDB.save();

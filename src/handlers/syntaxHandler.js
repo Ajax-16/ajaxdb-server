@@ -53,6 +53,12 @@ export function verifySyntax(command) {
 
         return {command, commandMatch: createMatch};
 
+        case 'ADD':
+
+        const addRegex = /^$/ui;
+
+        return {command, commandMatch: addMatch}
+
         case 'INSERT':
 
             const regex = /INSERT\s+INTO\s+\w+\s*(?:\(([^()]+)\))?\s*(?:VALUES\s*\(([^()]+)\))?\s*/ui;

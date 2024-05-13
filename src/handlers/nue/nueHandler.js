@@ -91,7 +91,7 @@ export async function executeCommand(rawCommand) {
                     throw new Error('Unexpected parameters on "CREATE DATABASE" instruction.');
                 }
 
-                await sysDB.insert({ tableName: 'databases', values: [elementName] })
+                await sysDB.insert({ tableName: 'database', values: [elementName] })
 
                 result = await createDb('data', elementName);
 
@@ -244,14 +244,14 @@ export async function executeCommand(rawCommand) {
 
             if(likeClause) {
                 result = sysDB.find({
-                    tableName: 'databases',
+                    tableName: 'database',
                     condition: 'name',
                     operator: 'LIKE',
                     conditionValue: likeClause.trim()
                 })
             }else {
                 result = sysDB.find({
-                    tableName: 'databases'
+                    tableName: 'database'
                 })
             }
 
@@ -266,7 +266,7 @@ export async function executeCommand(rawCommand) {
                 case 'DB':
 
                     await sysDB.delete({
-                        tableName: 'databases',
+                        tableName: 'database',
                         condition: 'name',
                         operator: '=',
                         conditionValue: commandParts[2].trim()
