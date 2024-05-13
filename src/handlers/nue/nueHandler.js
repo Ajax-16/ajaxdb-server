@@ -35,6 +35,17 @@ async function handlePreRequestHeaders(headers) {
             case "HandShake":
 
                 break;
+            case "Authorization":
+                const [authType, auth] = value.split(/^\s*/);
+
+                switch (authType) {
+                    case 'Classic':
+                        const [username, password] = value.split(':');
+                        
+                        break;
+                }
+
+                break;
         }
     }
 }
@@ -242,20 +253,20 @@ export async function executeCommand(rawCommand) {
 
             const likeClause = commandMatch[1];
 
-            if(likeClause) {
+            if (likeClause) {
                 result = sysDB.find({
                     tableName: 'database',
                     condition: 'name',
                     operator: 'LIKE',
                     conditionValue: likeClause.trim()
                 })
-            }else {
+            } else {
                 result = sysDB.find({
                     tableName: 'database'
                 })
             }
 
-        break;
+            break;
 
         case 'DROP':
 
