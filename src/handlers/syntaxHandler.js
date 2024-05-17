@@ -8,6 +8,7 @@ export function verifySyntax(command) {
     switch (action.toUpperCase()) {
 
         case 'INIT':
+        case 'USE':
             const databaseName = commandParts[1];
             const dbIsNumber = parseInt(databaseName);
             if (!isNaN(dbIsNumber)) {
@@ -96,10 +97,9 @@ export function verifySyntax(command) {
                     execError('Element: ' + describeElement + ' does not support the DESCRIBE command.');
             }
 
-
         case 'SHOW':
 
-            const showRegex = /^\s*SHOW\s+(?:DATABASES|DBS)(?:\s+LIKE\s+['"](%?[\w\s]+%?)['"])?$/ui;
+            const showRegex = /^\s*(?:SHOW|LS)\s+(?:DATABASES|DBS)(?:\s+LIKE\s+['"](%?[\w\s]+%?)['"])?$/ui;
 
             if(!showRegex.test(command)) {
                 execError('Invalid format for show command');
@@ -110,8 +110,9 @@ export function verifySyntax(command) {
             return {command, commandMatch: showMatch};
 
         case 'FIND':
+        case 'SELECT':
 
-            const findRegex = /^\s*FIND\s+((?:DISTINCT\s+)?)((?:\*|[\w.\s,]+)?)\s+IN\s+(\w+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:\w+\.\w+|\w+))\s*((?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+))\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?))?\s*(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$/ui;
+            const findRegex = /^\s*(?:FIND|SELECT)\s+((?:DISTINCT\s+)?)((?:\*|[\w.\s,]+)?)\s+(?:IN|FROM)\s+(\w+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$/ui;
 
             if (!findRegex.test(command)) {
                 execError('Invalid format for finding command');

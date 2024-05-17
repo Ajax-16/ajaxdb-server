@@ -1,6 +1,6 @@
 import { DB, dropDb, describeDatabase, createDb } from 'nuedb_core';
 import { verifySyntax } from '../syntaxHandler.js';
-import { clean } from "../../utils/string.js";
+import { clean, retainSplit } from "../../utils/string.js";
 import { createNueResponse } from './messageHandler.js';
 
 let currentDB = 'placeholder';
@@ -41,7 +41,7 @@ async function handlePreRequestHeaders(headers) {
                 switch (authType) {
                     case 'Classic':
                         const [username, password] = value.split(':');
-                        
+
                         break;
                 }
 
@@ -76,6 +76,7 @@ export async function executeCommand(rawCommand) {
 
     switch (action) {
         case 'INIT':
+        case 'USE':
             dbName = commandParts[1].split(';').shift();
             currentDB = new DB();
             const init = await currentDB.init('data', dbName);
@@ -168,6 +169,7 @@ export async function executeCommand(rawCommand) {
             break;
 
         case 'FIND':
+        case 'SELECT':
             if (!(currentDB instanceof DB)) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
@@ -176,7 +178,6 @@ export async function executeCommand(rawCommand) {
                 distinct: Boolean(commandMatch[1]),
                 columns: commandMatch[2] === '*' ? undefined : commandMatch[2].split(',').map(column => column.trim()),
                 tableName: commandMatch[3],
-                condition: commandMatch[5],
                 operator: commandMatch[6],
                 orderBy: commandMatch[8],
                 limit: commandMatch[10],
@@ -196,19 +197,55 @@ export async function executeCommand(rawCommand) {
                 findQueryObject.joins = joins;
             }
 
-            // Asignación de valor de la condición si es usada la variable PRIMARY_KEY
-            if (findQueryObject.condition === 'PRIMARY_KEY') {
-                findQueryObject.condition = undefined;
+            if (commandMatch[5]) {
+                let conditionsArray = retainSplit(commandMatch[5], /\s+AND\s+/, /\s+OR\s+/)
+                const conditions = []
+                for(let i = 0; i<conditionsArray.length; i++) {
+                    if(conditionsArray[i]==='AND'){
+                        const completeCondition = conditionsArray[i+1].split(/\s+/)
+                        conditions.push({
+                            logicalOperator: 'AND',
+                            condition: completeCondition[0],
+                            operator: completeCondition[1],
+                            conditionValue: clean(completeCondition[2])
+                        })
+                        i++;
+                    }else if(conditionsArray[i]==='OR') {
+                            const completeCondition = conditionsArray[i+1].split(/\s+/)
+                            conditions.push({
+                                logicalOperator: 'OR',
+                                condition: completeCondition[0],
+                                operator: completeCondition[1],
+                                conditionValue: clean(completeCondition[2]),
+                            })
+                            i++;
+                    }else {
+                        const completeCondition = conditionsArray[i].split(/\s+/)
+                        conditions.push({
+                            condition: completeCondition[0],
+                            operator: completeCondition[1],
+                            conditionValue: clean(completeCondition[2])
+                        })
+                    }
+                }
+                findQueryObject.conditions = conditions;
             }
 
+            
+
+            // Asignación de valor de la condición si es usada la variable PRIMARY_KEY
+            // if (findQueryObject.condition === 'PRIMARY_KEY') {
+            //     findQueryObject.condition = undefined;
+            // }
+
             // Asignación de valores dependiendo del operador. Si es IN o NOT IN deberá expresarse como un array de elementos, si no, como valores normales (string, number, boolean...).
-            if (findQueryObject.operator) {
-                if (findQueryObject.operator.toUpperCase() === 'IN' || findQueryObject.operator.toUpperCase() === 'NOT IN') {
-                    findQueryObject.conditionValue = commandMatch[7].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-                } else {
-                    findQueryObject.conditionValue = clean(commandMatch[7]);
-                }
-            }
+            // if (findQueryObject.operator) {
+            //     if (findQueryObject.operator.toUpperCase() === 'IN' || findQueryObject.operator.toUpperCase() === 'NOT IN') {
+            //         findQueryObject.conditionValue = commandMatch[7].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
+            //     } else {
+            //         findQueryObject.conditionValue = clean(commandMatch[7]);
+            //     }
+            // }
 
             // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
             if (commandMatch[9] === undefined || commandMatch[9].toUpperCase() === 'ASC') {
@@ -246,6 +283,7 @@ export async function executeCommand(rawCommand) {
             break;
 
         case 'SHOW':
+        case 'LS':
 
             const likeClause = commandMatch[1];
 

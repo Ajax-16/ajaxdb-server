@@ -53,3 +53,32 @@ export function clean(value) {
         return value;
     }
 }
+
+export function retainSplit(str, ...delimiters) {
+    let result = [];
+    let startIndex = 0;
+
+    for (let i = 0; i < str.length; i++) {
+        for (const delimiter of delimiters) {
+            if (typeof delimiter === 'string') {
+                if (str.substring(i, i + delimiter.length) === delimiter) {
+                    result.push(str.substring(startIndex, i));
+                    result.push(delimiter.trim());
+                    startIndex = i + delimiter.length;
+                }
+            } else if (delimiter instanceof RegExp) {
+                const match = str.substring(i).match(delimiter);
+                if (match && match.index === 0) {
+                    result.push(str.substring(startIndex, i));
+                    result.push(match[0].trim());
+                    startIndex = i + match[0].length;
+                }
+            }
+        }
+    }
+
+    // Se agrega la parte restante de la cadena al resultado
+    result.push(str.substring(startIndex));
+
+    return result;
+}
