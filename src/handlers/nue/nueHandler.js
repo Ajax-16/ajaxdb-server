@@ -200,52 +200,84 @@ export async function executeCommand(rawCommand) {
             if (commandMatch[5]) {
                 let conditionsArray = retainSplit(commandMatch[5], /\s+AND\s+/, /\s+OR\s+/)
                 const conditions = []
-                for(let i = 0; i<conditionsArray.length; i++) {
-                    if(conditionsArray[i]==='AND'){
-                        const completeCondition = conditionsArray[i+1].split(/\s+/)
+                for (let i = 0; i < conditionsArray.length; i++) {
+                    if (conditionsArray[i].toUpperCase() === 'AND') {
+                        const completeCondition = conditionsArray[i + 1].match(/^(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))$/ui)
+                        let condition = completeCondition[1]
+                        let operator = completeCondition[2].trim();
+                        let conditionValue = clean(completeCondition[3])
+
+                        if (condition === 'PRIMARY_KEY') {
+                            condition = undefined;
+                        }
+                        if (operator) {
+                            if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
+                                
+                                conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
+                                
+                            } else {
+                                conditionValue = clean(completeCondition[3]);
+                            }
+                        }
+
                         conditions.push({
                             logicalOperator: 'AND',
-                            condition: completeCondition[0],
-                            operator: completeCondition[1],
-                            conditionValue: clean(completeCondition[2])
+                            condition,
+                            operator,
+                            conditionValue
                         })
                         i++;
-                    }else if(conditionsArray[i]==='OR') {
-                            const completeCondition = conditionsArray[i+1].split(/\s+/)
-                            conditions.push({
-                                logicalOperator: 'OR',
-                                condition: completeCondition[0],
-                                operator: completeCondition[1],
-                                conditionValue: clean(completeCondition[2]),
-                            })
-                            i++;
-                    }else {
-                        const completeCondition = conditionsArray[i].split(/\s+/)
+                    } else if (conditionsArray[i].toUpperCase() === 'OR') {
+                        const completeCondition = conditionsArray[i + 1].match(/^(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))$/ui)
+                        let condition = completeCondition[1]
+                        let operator = completeCondition[2].trim();
+                        let conditionValue = clean(completeCondition[3])
+                        if (condition === 'PRIMARY_KEY') {
+                            condition = undefined;
+                        }
+                        if (operator) {
+                            if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
+                                
+                                conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
+                            } else {
+                                conditionValue = clean(completeCondition[3]);
+                            }
+                        }
+
                         conditions.push({
-                            condition: completeCondition[0],
-                            operator: completeCondition[1],
-                            conditionValue: clean(completeCondition[2])
+                            logicalOperator: 'OR',
+                            condition,
+                            operator,
+                            conditionValue,
+                        })
+                        i++;
+                    } else {
+                        const completeCondition = conditionsArray[i].match(/^(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))$/ui)
+                        let condition = completeCondition[1]
+                        let operator = completeCondition[2].trim();
+                        let conditionValue = clean(completeCondition[3])
+                        if (condition === 'PRIMARY_KEY') {
+                            condition = undefined;
+                        }
+                        if (operator) {
+                            if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
+                                
+                                conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
+                                
+                            } else {
+                                conditionValue = clean(completeCondition[3]);
+                            }
+                        }
+
+                        conditions.push({
+                            condition,
+                            operator,
+                            conditionValue
                         })
                     }
                 }
                 findQueryObject.conditions = conditions;
             }
-
-            
-
-            // Asignación de valor de la condición si es usada la variable PRIMARY_KEY
-            // if (findQueryObject.condition === 'PRIMARY_KEY') {
-            //     findQueryObject.condition = undefined;
-            // }
-
-            // Asignación de valores dependiendo del operador. Si es IN o NOT IN deberá expresarse como un array de elementos, si no, como valores normales (string, number, boolean...).
-            // if (findQueryObject.operator) {
-            //     if (findQueryObject.operator.toUpperCase() === 'IN' || findQueryObject.operator.toUpperCase() === 'NOT IN') {
-            //         findQueryObject.conditionValue = commandMatch[7].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-            //     } else {
-            //         findQueryObject.conditionValue = clean(commandMatch[7]);
-            //     }
-            // }
 
             // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
             if (commandMatch[9] === undefined || commandMatch[9].toUpperCase() === 'ASC') {
