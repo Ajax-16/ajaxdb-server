@@ -40,7 +40,6 @@ export function ormParse(table) {
             return resultObject;
         } else if (table.length === 2) {
             let resultObject = {};
-            resultObject[table[0]] = table[1][0];
             return resultObject;
         }
 

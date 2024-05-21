@@ -5,10 +5,9 @@ export function parseNueRequest(rawRequest) {
 
     rawRequest = rawRequest.toString();
 
-    const requestRegex = /^(NUE)(?:\r\n((?:\s*\w+\s*=\s*\w+\s*\r\n)*))\r+\n+([\s\S]*)$/ui;
+    const requestRegex = /^(NUE)(?:\r\n((?:\s*\w+\s*=\s*[\w :]+\s*\r\n)*))\r+\n+([\s\S]*)$/ui;
     let headers, body;
     const requestMatch = rawRequest.match(requestRegex);
-
     headers = requestMatch[2].split("\r\n");
     
     headers.pop();

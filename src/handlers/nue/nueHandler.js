@@ -2,15 +2,19 @@ import { DB, dropDb, describeDatabase, createDb } from 'nuedb_core';
 import { verifySyntax } from '../syntaxHandler.js';
 import { clean, retainSplit } from "../../utils/string.js";
 import { createNueResponse } from './messageHandler.js';
+import { ormParse } from '../../utils/orm.js';
+import bcrypt from "bcrypt";
 
 let currentDB = 'placeholder';
 const sysDB = new DB();
 let dbName = ''
+let user = { userData: null, hasAccess: false }
 let result;
 
 export async function handleNueRequest(headers, body) {
     try {
-        handlePreRequestHeaders(headers);
+        await sysDB.init('system', 'nue');
+        await handlePreRequestHeaders(headers);
         if (body) {
             const allRequests = body.split(';')
             const allResponses = []
@@ -18,11 +22,11 @@ export async function handleNueRequest(headers, body) {
                 allResponses.push(await executeCommand(req))
             }
             const finalRes = createNueResponse({ Status: "OK" }, allResponses);
-            handlePostRequestHeaders(headers);
+            await handlePostRequestHeaders(headers);
             return finalRes;
         }
         const res = createNueResponse({ Status: "OK" });
-        handlePostRequestHeaders(headers);
+        await handlePostRequestHeaders(headers);
         return res;
     } catch (err) {
         return createNueResponse({ Status: "ERROR" }, [err.message]);
@@ -30,21 +34,43 @@ export async function handleNueRequest(headers, body) {
 }
 
 async function handlePreRequestHeaders(headers) {
-    for (const header in headers) {
+    for (const [header, value] of Object.entries(headers)) {
+
         switch (header) {
             case "HandShake":
 
                 break;
             case "Authorization":
-                const [authType, auth] = value.split(/^\s*/);
+                const [authType, auth] = value.split(" ");
 
                 switch (authType) {
                     case 'Classic':
-                        const [username, password] = value.split(':');
+                        const [username, password] = auth.split(':');
 
+                        let currentUser = await sysDB.find({
+                            tableName: 'user',
+                            conditions: [
+                                {
+                                    condition: 'username',
+                                    operator: '=',
+                                    conditionValue: username
+                                }
+                            ]
+                        })
+
+                        const userFromDB = ormParse(currentUser);
+
+                        if (userFromDB) {
+                            const uncrpyptedPasswd = bcrypt.compareSync(password, userFromDB.password);
+                            if (uncrpyptedPasswd) {
+                                user.userData = userFromDB;
+                                user.hasAccess = true;
+                            } else {
+                                throw new Error('auth failed!')
+                            }
+                        }
                         break;
                 }
-
                 break;
         }
     }
@@ -66,7 +92,9 @@ async function handlePostRequestHeaders(headers) {
 
 export async function executeCommand(rawCommand) {
 
-    await sysDB.init('system', 'nue');
+    if (!user.hasAccess) {
+        throw new Error('Authorization failed! You can\'t access any resource!');
+    }
 
     let { commandMatch, command } = verifySyntax(rawCommand);
 
@@ -75,8 +103,13 @@ export async function executeCommand(rawCommand) {
     const tableName = commandParts[2];
 
     switch (action) {
+
         case 'INIT':
         case 'USE':
+
+            if (!user.userData.can_read) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+            }
             dbName = commandParts[1].split(';').shift();
             currentDB = new DB();
             const init = await currentDB.init('data', dbName);
@@ -87,7 +120,11 @@ export async function executeCommand(rawCommand) {
             }
             break;
 
+
         case 'CREATE':
+            if (!user.userData.can_create) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+            }
 
             const element = commandMatch[1];
             const elementName = commandMatch[2].trim();
@@ -139,6 +176,9 @@ export async function executeCommand(rawCommand) {
             if (!(currentDB instanceof DB)) {
                 throw new Error('No database intialized. Use "INIT <database_name>" to initialize a database.');
             }
+            if (!user.userData.can_create) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+            }
 
             const insertColumns = commandMatch[1];
             const insertValues = commandMatch[2];
@@ -173,6 +213,9 @@ export async function executeCommand(rawCommand) {
             if (!(currentDB instanceof DB)) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
             }
+            if (!user.userData.can_read) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+            }
 
             const findQueryObject = {
                 distinct: Boolean(commandMatch[1]),
@@ -198,7 +241,7 @@ export async function executeCommand(rawCommand) {
             }
 
             if (commandMatch[5]) {
-                let conditionsArray = retainSplit(commandMatch[5], /\s+AND\s+/, /\s+OR\s+/)
+                let conditionsArray = retainSplit(commandMatch[5], /\s+AND\s+/ui, /\s+OR\s+/ui)
                 const conditions = []
                 for (let i = 0; i < conditionsArray.length; i++) {
                     if (conditionsArray[i].toUpperCase() === 'AND') {
@@ -212,9 +255,9 @@ export async function executeCommand(rawCommand) {
                         }
                         if (operator) {
                             if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
-                                
+
                                 conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-                                
+
                             } else {
                                 conditionValue = clean(completeCondition[3]);
                             }
@@ -237,7 +280,7 @@ export async function executeCommand(rawCommand) {
                         }
                         if (operator) {
                             if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
-                                
+
                                 conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
                             } else {
                                 conditionValue = clean(completeCondition[3]);
@@ -261,9 +304,9 @@ export async function executeCommand(rawCommand) {
                         }
                         if (operator) {
                             if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
-                                
+
                                 conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-                                
+
                             } else {
                                 conditionValue = clean(completeCondition[3]);
                             }
@@ -291,6 +334,9 @@ export async function executeCommand(rawCommand) {
 
         case 'DESCRIBE':
         case 'LS':
+            if (!user.userData.can_read) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+            }
 
             const describeElement = commandParts[1];
             if (!commandParts[2]) {
@@ -316,6 +362,9 @@ export async function executeCommand(rawCommand) {
 
         case 'SHOW':
         case 'LS':
+            if (!user.userData.can_read) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+            }
 
             const likeClause = commandMatch[1];
 
@@ -335,6 +384,10 @@ export async function executeCommand(rawCommand) {
             break;
 
         case 'DROP':
+
+        if (!user.userData.can_delete) {
+            throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+        }
 
             const dropElement = commandParts[1];
 
@@ -365,6 +418,9 @@ export async function executeCommand(rawCommand) {
         case 'DELETE':
             if (!(currentDB instanceof DB)) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+            }
+            if (!user.userData.can_delete) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
             }
 
             const deleteMatch = commandMatch;
@@ -404,6 +460,9 @@ export async function executeCommand(rawCommand) {
         case 'UPDATE':
             if (!(currentDB instanceof DB)) {
                 throw new Error('No database initialized. Use "INIT <database_name>" to initialize a database.');
+            }
+            if (!user.userData.can_update) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
             }
 
             const updateMatch = commandMatch;
@@ -459,6 +518,8 @@ export async function executeCommand(rawCommand) {
         default:
             throw new Error('Invalid command action');
     }
+
+    user = { userData: null, hasAccess: false }
 
     return result;
 
