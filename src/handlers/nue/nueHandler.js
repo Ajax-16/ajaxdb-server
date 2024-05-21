@@ -13,7 +13,6 @@ let result;
 
 export async function handleNueRequest(headers, body) {
     try {
-        await sysDB.init('system', 'nue');
         await handlePreRequestHeaders(headers);
         if (body) {
             const allRequests = body.split(';')
@@ -41,6 +40,7 @@ async function handlePreRequestHeaders(headers) {
 
                 break;
             case "Authorization":
+                await sysDB.init('system', 'nue');
                 const [authType, auth] = value.split(" ");
 
                 switch (authType) {
@@ -96,6 +96,8 @@ export async function executeCommand(rawCommand) {
         throw new Error('Authorization failed! You can\'t access any resource!');
     }
 
+    await sysDB.init('system', 'nue');
+
     let { commandMatch, command } = verifySyntax(rawCommand);
 
     const commandParts = command.split(' ');
@@ -137,7 +139,6 @@ export async function executeCommand(rawCommand) {
                 }
 
                 await sysDB.insert({ tableName: 'database', values: [elementName] })
-
                 result = await createDb('data', elementName);
 
             } else if (element && (element.toUpperCase() === 'TABLE' || element.toUpperCase() === 'TB')) {
