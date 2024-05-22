@@ -22,6 +22,7 @@ export async function handleNueRequest(headers, body) {
             }
             const finalRes = createNueResponse({ Status: "OK" }, allResponses);
             await handlePostRequestHeaders(headers);
+            user = {userData: null, hasAccess: false}
             return finalRes;
         }
         const res = createNueResponse({ Status: "OK" });
@@ -80,10 +81,14 @@ async function handlePostRequestHeaders(headers) {
     for (const header in headers) {
         switch (header) {
             case "Save":
-                if (currentDB instanceof DB) {
-                    await currentDB.save();
+                if(user.hasAccess) {
+                    if (currentDB instanceof DB) {
+                        await currentDB.save();
+                    }
+                    await sysDB.save();
+                }else {
+                    throw new Error('auth failed!')
                 }
-                await sysDB.save();
 
                 break;
         }
@@ -519,8 +524,6 @@ export async function executeCommand(rawCommand) {
         default:
             throw new Error('Invalid command action');
     }
-
-    user = { userData: null, hasAccess: false }
 
     return result;
 

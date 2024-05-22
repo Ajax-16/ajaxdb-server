@@ -6,4 +6,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - './data:/var/nuedb/data'
+      - 'data:/var/nuedb/data'
+
+volumes:
+  data:
