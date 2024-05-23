@@ -3,7 +3,7 @@ import { verifySyntax } from '../syntaxHandler.js';
 import { clean, retainSplit } from "../../utils/string.js";
 import { createNueResponse } from './messageHandler.js';
 import { ormParse } from '../../utils/orm.js';
-import bcrypt from "bcrypt";
+import bcryptjs from "bcryptjs";
 
 let currentDB = 'placeholder';
 const sysDB = new DB();
@@ -62,7 +62,7 @@ async function handlePreRequestHeaders(headers) {
                         const userFromDB = ormParse(currentUser);
 
                         if (userFromDB) {
-                            const uncrpyptedPasswd = bcrypt.compareSync(password, userFromDB.password);
+                            const uncrpyptedPasswd = bcryptjs.compareSync(password, userFromDB.password);
                             if (uncrpyptedPasswd) {
                                 user.userData = userFromDB;
                                 user.hasAccess = true;

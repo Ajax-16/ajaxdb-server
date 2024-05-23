@@ -1,12 +1,14 @@
-version: '3'
-
 services:
   nuedb:
     image: ajax16/nuedb:latest
     ports:
       - 3000:3000
+    environment:
+      - NUEDB_ROOT_USERNAME=davivi
+      - NUEDB_ROOT_PASSWORD=1234
+    restart: always
     volumes:
-      - 'data:/var/nuedb/data'
+      - 'data:/var/nuedb'
 
 volumes:
   data:
