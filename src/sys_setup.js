@@ -6,9 +6,9 @@ async function main() {
 
     let NUEDB_ROOT_USERNAME, NUEDB_ROOT_PASSWORD;
 
-    if (process.env.NUEDB_ROOT_USERNAME || process.env.NUEDB_ROOT_USERNAME) {
+    if (process.env.NUEDB_ROOT_USERNAME || process.env.NUEDB_ROOT_PASSWORD) {
         NUEDB_ROOT_USERNAME = process.env.NUEDB_ROOT_USERNAME || 'root';
-        NUEDB_ROOT_USERNAME = process.env.NUEDB_ROOT_PASSWORD || 'root';
+        NUEDB_ROOT_PASSWORD = process.env.NUEDB_ROOT_PASSWORD || 'root';
     } else {
         dotenv.config({ path: '../.env' || '../.env.example' })
         NUEDB_ROOT_USERNAME = process.env.NUEDB_ROOT_USERNAME || 'root';
