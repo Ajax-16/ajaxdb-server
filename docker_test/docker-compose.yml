@@ -4,8 +4,8 @@ services:
     ports:
       - 3000:3000
     environment:
-      - NUEDB_ROOT_USERNAME=davivi
-      - NUEDB_ROOT_PASSWORD=1234
+      NUEDB_ROOT_USERNAME: davivi
+      NUEDB_ROOT_PASSWORD: 1234
     restart: always
     volumes:
       - 'data:/var/nuedb'
