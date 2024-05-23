@@ -2,6 +2,8 @@ FROM node:latest
 
 RUN useradd nuedb
 
+USER root
+
 WORKDIR /opt/nuedb
 
 COPY src .
