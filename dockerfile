@@ -1,6 +1,6 @@
 FROM node:latest
 
-WORKDIR /opt/nuedb
+WORKDIR /nuedb
 
 COPY src .
 
