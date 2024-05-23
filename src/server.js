@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
 import { executeCommand, handleNueRequest } from './handlers/nue/nueHandler.js';
 import { createNueResponse, parseNueRequest } from './handlers/nue/messageHandler.js';
+import { verifySysSetup } from './sys_setup.js';
 
 let PORT, CHUNK_SIZE;
 

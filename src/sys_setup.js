@@ -59,5 +59,3 @@ async function sysSetup() {
 
     await sysDB.save();
 }
-
-main();
