@@ -1,12 +1,14 @@
 import { DB, dropDb, describeDatabase, createDb } from 'nuedb_core';
 import { verifySyntax } from '../syntaxHandler.js';
-import { clean, retainSplit } from "../../utils/string.js";
-import { createNueResponse } from './messageHandler.js';
+import { clean } from "../../utils/string.js";
+import { createNueResponse } from './nueMessageHandler.js';
 import { ormParse } from '../../utils/orm.js';
 import bcryptjs from "bcryptjs";
+import { getConditions } from './nueUtils.js';
 
 let currentDB = 'placeholder';
 const sysDB = new DB();
+await sysDB.init('system', 'nue');
 let dbName = ''
 let user = { userData: null, hasAccess: false }
 let result;
@@ -22,11 +24,11 @@ export async function handleNueRequest(headers, body) {
             }
             const finalRes = createNueResponse({ Status: "OK" }, allResponses);
             await handlePostRequestHeaders(headers);
-            user = {userData: null, hasAccess: false}
             return finalRes;
         }
         const res = createNueResponse({ Status: "OK" });
         await handlePostRequestHeaders(headers);
+        user = { userData: null, hasAccess: false }
         return res;
     } catch (err) {
         return createNueResponse({ Status: "ERROR" }, [err.message]);
@@ -41,7 +43,7 @@ async function handlePreRequestHeaders(headers) {
 
                 break;
             case "Authorization":
-                await sysDB.init('system', 'nue');
+
                 const [authType, auth] = value.split(" ");
 
                 switch (authType) {
@@ -81,12 +83,12 @@ async function handlePostRequestHeaders(headers) {
     for (const header in headers) {
         switch (header) {
             case "Save":
-                if(user.hasAccess) {
+                if (user.hasAccess) {
                     if (currentDB instanceof DB) {
                         await currentDB.save();
                     }
                     await sysDB.save();
-                }else {
+                } else {
                     throw new Error('auth failed!')
                 }
 
@@ -100,8 +102,6 @@ export async function executeCommand(rawCommand) {
     if (!user.hasAccess) {
         throw new Error('Authorization failed! You can\'t access any resource!');
     }
-
-    await sysDB.init('system', 'nue');
 
     let { commandMatch, command } = verifySyntax(rawCommand);
 
@@ -144,6 +144,7 @@ export async function executeCommand(rawCommand) {
                 }
 
                 await sysDB.insert({ tableName: 'database', values: [elementName] })
+
                 result = await createDb('data', elementName);
 
             } else if (element && (element.toUpperCase() === 'TABLE' || element.toUpperCase() === 'TB')) {
@@ -247,85 +248,7 @@ export async function executeCommand(rawCommand) {
             }
 
             if (commandMatch[5]) {
-                let conditionsArray = retainSplit(commandMatch[5], /\s+AND\s+/ui, /\s+OR\s+/ui)
-                const conditions = []
-                for (let i = 0; i < conditionsArray.length; i++) {
-                    if (conditionsArray[i].toUpperCase() === 'AND') {
-                        const completeCondition = conditionsArray[i + 1].match(/^(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))$/ui)
-                        let condition = completeCondition[1]
-                        let operator = completeCondition[2].trim();
-                        let conditionValue = clean(completeCondition[3])
-
-                        if (condition === 'PRIMARY_KEY') {
-                            condition = undefined;
-                        }
-                        if (operator) {
-                            if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
-
-                                conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-
-                            } else {
-                                conditionValue = clean(completeCondition[3]);
-                            }
-                        }
-
-                        conditions.push({
-                            logicalOperator: 'AND',
-                            condition,
-                            operator,
-                            conditionValue
-                        })
-                        i++;
-                    } else if (conditionsArray[i].toUpperCase() === 'OR') {
-                        const completeCondition = conditionsArray[i + 1].match(/^(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))$/ui)
-                        let condition = completeCondition[1]
-                        let operator = completeCondition[2].trim();
-                        let conditionValue = clean(completeCondition[3])
-                        if (condition === 'PRIMARY_KEY') {
-                            condition = undefined;
-                        }
-                        if (operator) {
-                            if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
-
-                                conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-                            } else {
-                                conditionValue = clean(completeCondition[3]);
-                            }
-                        }
-
-                        conditions.push({
-                            logicalOperator: 'OR',
-                            condition,
-                            operator,
-                            conditionValue,
-                        })
-                        i++;
-                    } else {
-                        const completeCondition = conditionsArray[i].match(/^(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))$/ui)
-                        let condition = completeCondition[1]
-                        let operator = completeCondition[2].trim();
-                        let conditionValue = clean(completeCondition[3])
-                        if (condition === 'PRIMARY_KEY') {
-                            condition = undefined;
-                        }
-                        if (operator) {
-                            if (operator.toUpperCase() === 'IN' || operator.toUpperCase() === 'NOT IN') {
-
-                                conditionValue = completeCondition[3].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-
-                            } else {
-                                conditionValue = clean(completeCondition[3]);
-                            }
-                        }
-
-                        conditions.push({
-                            condition,
-                            operator,
-                            conditionValue
-                        })
-                    }
-                }
-                findQueryObject.conditions = conditions;
+                findQueryObject.conditions = getConditions(commandMatch[5]);
             }
 
             // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
@@ -377,9 +300,11 @@ export async function executeCommand(rawCommand) {
             if (likeClause) {
                 result = sysDB.find({
                     tableName: 'database',
-                    condition: 'name',
-                    operator: 'LIKE',
-                    conditionValue: likeClause.trim()
+                    conditions: [{
+                        condition: 'name',
+                        operator: 'LIKE',
+                        conditionValue: clean(likeClause.trim())
+                    }]
                 })
             } else {
                 result = sysDB.find({
@@ -391,9 +316,9 @@ export async function executeCommand(rawCommand) {
 
         case 'DROP':
 
-        if (!user.userData.can_delete) {
-            throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
-        }
+            if (!user.userData.can_delete) {
+                throw new Error(`User ${user.userData.username}/${user.userData.host} has not privileges to perform this action.`)
+            }
 
             const dropElement = commandParts[1];
 
@@ -403,9 +328,11 @@ export async function executeCommand(rawCommand) {
 
                     await sysDB.delete({
                         tableName: 'database',
-                        condition: 'name',
-                        operator: '=',
-                        conditionValue: commandParts[2].trim()
+                        condtions: [{
+                            condition: 'name',
+                            operator: '=',
+                            conditionValue: clean(commandParts[2].trim())
+                        }]
                     });
 
                     result = await dropDb('data', commandParts[2].trim());
@@ -431,36 +358,16 @@ export async function executeCommand(rawCommand) {
 
             const deleteMatch = commandMatch;
 
-            const deleteTableName = deleteMatch[1];
-            const deleteWhereField = deleteMatch[2];
-            const deleteOperator = deleteMatch[3];
-            let deleteConditionValue;
-
-            if (deleteMatch[4]) {
-                if (deleteOperator.toUpperCase() === 'IN' || deleteOperator.toUpperCase() === 'NOT IN') {
-                    deleteConditionValue = deleteMatch[4].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-                } else {
-                    deleteConditionValue = clean(deleteMatch[4]);
-                }
-            } else {
-                throw new Error('You must specify a condition value for WHERE clause.');
+            const deleteObj = {
+                tableName: deleteMatch[1]
             }
 
-            if (deleteWhereField === 'PRIMARY_KEY') {
-                result = await currentDB.delete({
-                    tableName: deleteTableName,
-                    condition: undefined,
-                    operator: deleteOperator,
-                    conditionValue: deleteConditionValue
-                });
-            } else {
-                result = await currentDB.delete({
-                    tableName: deleteTableName,
-                    condition: deleteWhereField,
-                    operator: deleteOperator,
-                    conditionValue: deleteConditionValue
-                });
+            if (deleteMatch[2]) {
+                deleteObj.conditions = getConditions(deleteMatch[2])
             }
+
+            result = await currentDB.delete(deleteObj);
+
             break;
 
         case 'UPDATE':
@@ -473,18 +380,11 @@ export async function executeCommand(rawCommand) {
 
             const updateMatch = commandMatch;
 
-            const updateTableName = updateMatch[1];
-            const setClause = updateMatch[2];
-            const updateCondition = updateMatch[3];
-            const updateOperator = updateMatch[4];
-            let updateConditionValue;
-
-            if (updateOperator.toUpperCase() === 'IN' || updateOperator.toUpperCase() === 'NOT IN') {
-                updateConditionValue = updateMatch[5].replace(/\(|\)/g, '').split(',').map(value => clean(value.trim()));
-            } else {
-                updateConditionValue = clean(updateMatch[5]);
+            const updateObj = {
+                tableName: updateMatch[1]
             }
 
+            const setClause = updateMatch[2]
             // Parse SET clause
             const setKeyValuePairs = setClause.match(/\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)/g) || [];
             const setArray = setKeyValuePairs.map(entry => entry.split('=').shift().trim());
@@ -498,27 +398,14 @@ export async function executeCommand(rawCommand) {
                     return value;
                 }
             });
-
-            // Perform the update operation
-            if (updateCondition === 'PRIMARY_KEY') {
-                result = await currentDB.update({
-                    tableName: updateTableName,
-                    set: setArray,
-                    setValues: cleanedSetValuesArray,
-                    condition: undefined,
-                    operator: updateOperator,
-                    conditionValue: updateConditionValue
-                });
-            } else {
-                result = await currentDB.update({
-                    tableName: updateTableName,
-                    set: setArray,
-                    setValues: cleanedSetValuesArray,
-                    condition: updateCondition,
-                    operator: updateOperator,
-                    conditionValue: updateConditionValue
-                });
+            updateObj.set = setArray;
+            updateObj.setValues = cleanedSetValuesArray;
+            if (updateMatch[3]) {
+                updateObj.conditions = getConditions(updateMatch[3])
             }
+
+            result = await currentDB.update(updateObj);
+
             break;
 
         default:
