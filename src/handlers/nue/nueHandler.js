@@ -143,7 +143,16 @@ export async function executeCommand(rawCommand) {
                     throw new Error('Unexpected parameters on "CREATE DATABASE" instruction.');
                 }
 
-                await sysDB.insert({ tableName: 'database', values: [elementName] })
+                const isDb = ormParse(sysDB.find({
+                    tableName: 'database',
+                    conditions: [
+                        {condition: 'name', operator: '=', conditionValue: elementName}
+                    ]
+                }))
+
+                if(!isDb.id) {
+                    await sysDB.insert({ tableName: 'database', values: [elementName] })
+                }
 
                 result = await createDb('data', elementName);
 
@@ -305,11 +314,11 @@ export async function executeCommand(rawCommand) {
                         operator: 'LIKE',
                         conditionValue: clean(likeClause.trim())
                     }]
-                })
+                });
             } else {
                 result = sysDB.find({
                     tableName: 'database'
-                })
+                });
             }
 
             break;
@@ -325,16 +334,15 @@ export async function executeCommand(rawCommand) {
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
                 case 'DB':
-
                     await sysDB.delete({
                         tableName: 'database',
-                        condtions: [{
+                        conditions: [{
                             condition: 'name',
                             operator: '=',
                             conditionValue: clean(commandParts[2].trim())
                         }]
                     });
-
+                    
                     result = await dropDb('data', commandParts[2].trim());
                     break;
                 case 'TABLE':

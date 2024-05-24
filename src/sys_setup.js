@@ -5,9 +5,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export async function verifySysSetup() {
-    const sysPath = process.platform === 'win32' ? 'C:/nuedb/' : '/var/nuedb/';
+    const sysPath = process.platform === 'win32' ? 'C:/nuedb/system/' : '/var/nuedb/system/';
     try {
-        await fs.access(path.join(sysPath, 'system'))
+        await fs.access(path.join(sysPath, 'nue.json'))
     }catch(err) {
         if (err.code === 'ENOENT') {
             sysSetup();

@@ -16,7 +16,7 @@ if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
   CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
 }
 
-await verifySysSetup();
+verifySysSetup();
 
 const server = net.createServer(async (socket) => {
 
