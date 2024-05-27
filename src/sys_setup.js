@@ -41,15 +41,15 @@ async function sysSetup() {
 
         await sysDB.createTable({ tableName: 'database', columns: ['name'] });
 
-        await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'host', 'can_create', 'can_read', 'can_update', 'can_delete'] });
+        await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'can_create', 'can_read', 'can_update', 'can_delete'] });
         const encryptedRootPasswd = bcryptjs.hashSync(NUEDB_ROOT_PASSWORD, 8)
-        await sysDB.insert({ tableName: 'user', values: [NUEDB_ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
+        await sysDB.insert({ tableName: 'user', values: [NUEDB_ROOT_USERNAME, encryptedRootPasswd, true, true, true, true] });
 
     } else if (!tableExists.has('user')) {
 
-        await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'host', 'can_create', 'can_read', 'can_update', 'can_delete'] });
+        await sysDB.createTable({ tableName: 'user', columns: ['username', 'password', 'can_create', 'can_read', 'can_update', 'can_delete'] });
         const encryptedRootPasswd = bcryptjs.hashSync(NUEDB_ROOT_PASSWORD, 8)
-        await sysDB.insert({ tableName: 'user', values: [NUEDB_ROOT_USERNAME, encryptedRootPasswd, 'localhost', true, true, true, true] });
+        await sysDB.insert({ tableName: 'user', values: [NUEDB_ROOT_USERNAME, encryptedRootPasswd, true, true, true, true] });
 
     } else if (!tableExists.has('databases')) {
 

@@ -1,5 +1,3 @@
-import { cleanColumns, filterCaracters } from "../utils/string.js";
-
 export function verifySyntax(command) {
 
     const commandParts = command.split(' ');
@@ -17,7 +15,17 @@ export function verifySyntax(command) {
             if (commandParts.length > 2) {
                 execError('1 argument expected (database name) but got: ' + (commandParts.length - 1).toString());
             }
-            return {command};
+            return { command };
+
+        case 'WHOAMI':
+
+        const whoamiRegex = /^\s*WHOAMI\s*$/ui;
+
+        if (!whoamiRegex.test(command)) {
+            execError('Invalid format for create command')
+        }
+
+        return { command };
 
         case 'DROP':
 
@@ -36,7 +44,8 @@ export function verifySyntax(command) {
                 case 'TABLE':
                 case 'TB':
                 case 'DB':
-                    return {command};
+                case 'USER':
+                    return { command };
 
                 default:
                     execError('Element: ' + dropElement + ' does not support the DROP command.');
@@ -44,25 +53,43 @@ export function verifySyntax(command) {
 
         case 'CREATE':
 
-        const createRegex = /^\s*CREATE\s+(DATABASE|TABLE|DB|TB)\s+(\w+)\s*(?:\((\w+\s*(?:as\s+PRIMARY_KEY\s*)?(?:,\s*\w+\s*(?:as\s+PRIMARY_KEY\s*)?)*\s*)\))?$/ui;
+            const createRegex = /^\s*CREATE\s+(DATABASE|TABLE|DB|TB)\s+(\w+)\s*(?:\((\w+\s*(?:as\s+PRIMARY_KEY\s*)?(?:,\s*\w+\s*(?:as\s+PRIMARY_KEY\s*)?)*\s*)\))?$/ui;
 
-        if(!createRegex.test(command)) {
-            execError('Invalid format for create command')
-        }
+            if (!createRegex.test(command)) {
+                execError('Invalid format for create command')
+            }
 
-        const createMatch = command.match(createRegex);
+            const createMatch = command.match(createRegex);
 
-        return {command, commandMatch: createMatch};
+            return { command, commandMatch: createMatch };
 
         case 'ADD':
 
-        const addRegex = /^$/ui;
+            const addRegex = /^\s*ADD\s+USER\s+['"]?(\w+)["']?(?:\s+WITH\s+PASSWORD\s+(\w+))?(?:\s+GRANT\s+PRIVILEGE\s+([crud]{1,4}|NULL))?$/ui;
 
-        return {command, commandMatch: addMatch}
+            if (!addRegex.test(command)) {
+                execError('Invalid format for add command');
+            }
+
+            const addMatch = command.match(addRegex);
+
+            return { command, commandMatch: addMatch }
+
+        case 'CHANGE':
+
+            const grantRegex = /^\s*CHANGE\s+PRIVILEGE\s+([crud]{1,4}|NULL)\s+TO\s+(\w+)$/ui;
+
+            if (!grantRegex.test(command)) {
+                execError('Invalid format for grant command');
+            }
+
+            const grantMatch = command.match(grantRegex);
+
+            return { command, commandMatch: grantMatch };
 
         case 'INSERT':
 
-            const regex = /INSERT\s+INTO\s+\w+\s*(?:\(([^()]+)\))?\s*(?:VALUES\s*\(([^()]+)\))?\s*/ui;
+            const regex = /INSERT\s+INTO\s+(\w+)\s*(?:\(([^()]+)\))?\s*(?:VALUES\s*\(([^()]+)\))?\s*/ui;
 
             if (!regex.test(command)) {
                 execError('Invalid format for insert command');
@@ -70,7 +97,7 @@ export function verifySyntax(command) {
 
             const insertMatch = command.match(regex);
 
-            return {command, commandMatch: insertMatch};
+            return { command, commandMatch: insertMatch };
 
 
         case 'DESCRIBE':
@@ -91,23 +118,23 @@ export function verifySyntax(command) {
                 case 'TABLE':
                 case 'TB':
                 case 'DB':
-                    return {command};
-                
+                    return { command };
+
                 default:
                     execError('Element: ' + describeElement + ' does not support the DESCRIBE command.');
             }
 
         case 'SHOW':
 
-            const showRegex = /^\s*(?:SHOW|LS)\s+(?:DATABASES|DBS)(?:\s+LIKE\s+['"](%?[\w\s]+%?)['"])?$/ui;
+            const showRegex = /^\s*(?:SHOW|LS)\s+(DATABASES|DBS|USERS)(?:\s+LIKE\s+['"](%?[\w\s]+%?)['"])?$/ui;
 
-            if(!showRegex.test(command)) {
+            if (!showRegex.test(command)) {
                 execError('Invalid format for show command');
             }
 
             const showMatch = command.match(showRegex);
 
-            return {command, commandMatch: showMatch};
+            return { command, commandMatch: showMatch };
 
         case 'FIND':
         case 'SELECT':
@@ -120,11 +147,11 @@ export function verifySyntax(command) {
 
             const findMatch = command.match(findRegex);
 
-            return {command, commandMatch: findMatch};
+            return { command, commandMatch: findMatch };
 
         case 'DELETE':
 
-        const deleteRegex = /^\s*DELETE\s*FROM\s*(\w+)\s*(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
+            const deleteRegex = /^\s*DELETE\s*FROM\s*(\w+)\s*(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
 
             if (!deleteRegex.test(command)) {
                 execError('Invalid format for delete command');
@@ -132,7 +159,7 @@ export function verifySyntax(command) {
 
             const deleteMatch = command.match(deleteRegex);
 
-            return {command, commandMatch: deleteMatch};
+            return { command, commandMatch: deleteMatch };
 
         case 'UPDATE':
 
@@ -144,7 +171,7 @@ export function verifySyntax(command) {
 
             const updateMatch = command.match(updateRegex);
 
-            return {command, commandMatch: updateMatch};
+            return { command, commandMatch: updateMatch };
 
         default:
             execError('Invalid command action: "' + action + '"')

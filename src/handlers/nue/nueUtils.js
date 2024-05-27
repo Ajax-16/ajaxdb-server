@@ -81,3 +81,27 @@ export function getConditions(conditionStatement) {
     }
     return conditions;
 }
+
+export function parsePrivs(privs) {
+    const finalPrivs = [false, false, false, false];
+
+    for(const priv of privs) {
+        switch(priv) {
+            case 'c':
+                finalPrivs[0] = true;
+            break;
+            case 'r':
+                finalPrivs[1] = true;
+            break;
+            case 'u':
+                finalPrivs[2] = true;
+            break;
+            case 'd':
+                finalPrivs[3] = true;
+            break;
+        }
+    }
+
+    return finalPrivs;
+
+}
