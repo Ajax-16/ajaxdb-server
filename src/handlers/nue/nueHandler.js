@@ -7,10 +7,10 @@ import bcryptjs from "bcryptjs";
 import { getConditions, parsePrivs } from './nueUtils.js';
 
 let currentDB = 'placeholder';
-const sysDB = new DB();
+export const sysDB = new DB();
 await sysDB.init('system', 'nue');
 let dbName = ''
-let user = { userData: null, hasAccess: false }
+export let user = { userData: null, hasAccess: false }
 let result;
 
 export async function handleNueRequest(headers, body) {

@@ -1,9 +1,11 @@
 import net from 'net';
 import dotenv from 'dotenv';
+import bcryptjs from "bcryptjs"
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
-import { executeCommand, handleNueRequest } from './handlers/nue/nueHandler.js';
+import { executeCommand, handleNueRequest, sysDB, user } from './handlers/nue/nueHandler.js';
 import { createNueResponse, parseNueRequest } from './handlers/nue/nueMessageHandler.js';
 import { verifySysSetup } from './sys_setup.js';
+import { ormParse } from './utils/orm.js';
 
 let PORT, CHUNK_SIZE;
 
@@ -35,7 +37,7 @@ const server = net.createServer(async (socket) => {
 
   socket.on('end', () => { });
 
-  socket.on('error', ()=> { })
+  socket.on('error', () => { })
 
 });
 
@@ -49,7 +51,7 @@ async function handleNUE(socket, data) {
     } else {
       sendLargeResponse(socket, result.toString());
     }
-  }catch (err) {
+  } catch (err) {
     const errResult = createNueResponse({ Status: "ERROR" }, [err.message]);
     socket.write(errResult.toString());
     socket.write('END_OF_RESPONSE');
@@ -71,6 +73,47 @@ async function handleHTTP(socket, data) {
     }
     else {
       if (request.route !== '/favicon.ico') {
+
+        if (request.authorization) {
+          let [type, auth] = request.authorization.split(' ');
+          switch (type) {
+            case 'Basic':
+              auth = Buffer.from(auth, 'base64').toString()
+              
+              const [username, password] = auth.split(':');
+
+              let currentUser = await sysDB.find({
+                tableName: 'user',
+                conditions: [
+                  {
+                    condition: 'username',
+                    operator: '=',
+                    conditionValue: username
+                  }
+                ]
+              })
+
+              const userFromDB = ormParse(currentUser);
+
+              if (userFromDB.id !== undefined) {
+                if (!userFromDB.password) {
+                  user.userData = userFromDB;
+                  user.hasAccess = true;
+                } else {
+                  const uncrpyptedPasswd = bcryptjs.compareSync(password, userFromDB.password);
+                  if (uncrpyptedPasswd) {
+                    user.userData = userFromDB;
+                    user.hasAccess = true;
+                  } else {
+                    throw new Error('auth failed!')
+                  }
+                }
+              } else {
+                throw new Error(`User ${username} does't exist!`)
+              }
+              break;
+          }
+        }
 
         const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
 
