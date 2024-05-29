@@ -89,16 +89,27 @@ export function verifySyntax(command) {
 
         case 'INSERT':
 
-            const regex = /INSERT\s+INTO\s+(\w+)\s*(?:\(([^()]+)\))?\s*(?:VALUES\s*\(([^()]+)\))?\s*/ui;
+            const insertRegex = /^\s*INSERT\s+INTO\s+(\w+)\s*(?:\(([^()]+)\))?\s*(?:VALUES\s*\(([^()]+)\))?\s*/ui;
 
-            if (!regex.test(command)) {
+            if (!insertRegex.test(command)) {
                 execError('Invalid format for insert command');
             }
 
-            const insertMatch = command.match(regex);
+            const insertMatch = command.match(insertRegex);
 
             return { command, commandMatch: insertMatch };
 
+        case 'FETCH':
+
+            const fetchRegex = /^\s*FETCH\s+TABLE\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}(?:\.)?[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)\)\s+WITH\s+NAME\s+(\w+)$/ui;
+
+            if(!fetchRegex.test(command)) {
+                execError('Invalid format for fetch command');
+            }
+
+            const fetchMatch = command.match(fetchRegex);
+
+            return { command, commandMatch: fetchMatch };
 
         case 'DESCRIBE':
         case 'LS':
@@ -163,7 +174,7 @@ export function verifySyntax(command) {
 
         case 'UPDATE':
 
-            const updateRegex = /^\s*^UPDATE\s+(\w+)\s+SET\s+(\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)|\d*\.?\d*)*)\s*(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+|\b["'][^"']*["']\b))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+|\b["'][^"']*["']\b))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
+        const updateRegex = /^\s*UPDATE\s+(\w+)\s+SET\s+((?:\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)(?:\s*,\s*\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^'",]*)|\d*\.?\d*)*)\s*)\s+(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+|\b["'][^"']*["']\b))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+|\b["'][^"']*["']\b))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
 
             if (!updateRegex.test(command)) {
                 execError('Invalid format for update command');

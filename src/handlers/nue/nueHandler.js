@@ -5,8 +5,10 @@ import { createNueResponse } from './nueMessageHandler.js';
 import { ormParse } from '../../utils/orm.js';
 import bcryptjs from "bcryptjs";
 import { getConditions, parsePrivs } from './nueUtils.js';
+import axios from "axios";
+import { fetchTable } from './fetchTable.js';
 
-let currentDB = 'placeholder';
+export let currentDB = 'placeholder';
 export const sysDB = new DB();
 await sysDB.init('system', 'nue');
 let dbName = ''
@@ -76,7 +78,7 @@ async function handlePreRequestHeaders(headers) {
                                     throw new Error('auth failed!')
                                 }
                             }
-                        }else {
+                        } else {
                             throw new Error(`User ${username} does't exist!`)
                         }
                         break;
@@ -133,7 +135,7 @@ export async function executeCommand(rawCommand) {
 
             result = user.userData.username;
 
-        break;
+            break;
 
         case 'CREATE':
             if (!user.userData.can_create) {
@@ -267,8 +269,8 @@ export async function executeCommand(rawCommand) {
 
             if (grantUserExist.id === undefined) {
                 throw new Error(`User ${grantUsername} doesn't exist!`);
-            }else {
-                if(grantUserExist.id === 0) {
+            } else {
+                if (grantUserExist.id === 0) {
                     throw new Error('root user privileges cannot be changed!')
                 }
             }
@@ -321,11 +323,34 @@ export async function executeCommand(rawCommand) {
                 }
                 const cleanedValues = cleanValues(insertColumns);
                 result = await currentDB.insert({ tableName: insertTableName, values: cleanedValues });
+                if(typeof result === 'number') {
+                    result = true;
+                }
             } else {
                 const cleanedColumns = insertColumns.split(',').map(value => clean(value.trim()));
                 const cleanedValues = cleanValues(insertValues);
                 result = await currentDB.insert({ tableName: insertTableName, columns: cleanedColumns, values: cleanedValues });
+                if(typeof result === 'number') {
+                    result = true;
+                }
             }
+            break;
+
+        case 'FETCH':
+
+            if (!(currentDB instanceof DB)) {
+                throw new Error('No database intialized. Use "INIT/USE <database_name>" to initialize a database.');
+            }
+
+            const url = commandMatch[1];
+            const rootTableName = commandMatch[2];
+
+            const {data} = await axios.get(url);
+
+            await fetchTable(data, rootTableName)
+
+            result = true
+
             break;
 
         case 'FIND':
@@ -341,10 +366,9 @@ export async function executeCommand(rawCommand) {
                 distinct: Boolean(commandMatch[1]),
                 columns: commandMatch[2] === '*' ? undefined : commandMatch[2].split(',').map(column => column.trim()),
                 tableName: commandMatch[3],
-                operator: commandMatch[6],
-                orderBy: commandMatch[8],
-                limit: commandMatch[10],
-                offset: commandMatch[11]
+                orderBy: commandMatch[6],
+                limit: commandMatch[8],
+                offset: commandMatch[9]
             }
 
             if (commandMatch[4]) {
@@ -365,7 +389,7 @@ export async function executeCommand(rawCommand) {
             }
 
             // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
-            if (commandMatch[9] === undefined || commandMatch[9].toUpperCase() === 'ASC') {
+            if (commandMatch[7] === undefined || commandMatch[7].toUpperCase() === 'ASC') {
                 findQueryObject.asc = true;
             } else {
                 findQueryObject.asc = false;
@@ -481,8 +505,8 @@ export async function executeCommand(rawCommand) {
 
                     if (dropUserExist.id === undefined) {
                         throw new Error(`User ${dropUsername} doesn't exist!`);
-                    }else {
-                        if(dropUserExist.id === 0) {
+                    } else {
+                        if (dropUserExist.id === 0) {
                             throw new Error('root user cannot be dropped!')
                         }
                     }
@@ -496,7 +520,7 @@ export async function executeCommand(rawCommand) {
                         }]
                     })
 
-                break;
+                    break;
             }
             break;
 
