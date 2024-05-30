@@ -245,15 +245,21 @@ export async function executeCommand(rawCommand) {
                 values: newUser
             });
 
+            if(result >= 0) {
+                result = true
+            }else if(typeof result !== 'number') {
+                result = false;
+            }
+
             break;
 
-        case 'CHANGE':
+        case 'SET':
 
             if (!user.userData.can_create) {
                 throw new Error(`User ${user.userData.username} has not privileges to perform this action.`)
             }
 
-            let changePrivs = commandMatch[1];
+            let setPrivs = commandMatch[1];
             const grantUsername = commandMatch[2];
 
             // verify username doesn't exist
@@ -274,16 +280,16 @@ export async function executeCommand(rawCommand) {
                     throw new Error('root user privileges cannot be changed!')
                 }
             }
-            if (/^NULL$/ui.test(changePrivs)) {
-                changePrivs = [false, false, false, false];
+            if (/^NULL$/ui.test(setPrivs)) {
+                setPrivs = [false, false, false, false];
             } else {
-                changePrivs = parsePrivs(changePrivs);
+                setPrivs = parsePrivs(setPrivs);
             }
 
             result = await sysDB.update({
                 tableName: 'user',
                 set: ["can_create", "can_read", "can_update", "can_delete"],
-                setValues: changePrivs,
+                setValues: setPrivs,
                 conditions: [{
                     condition: undefined,
                     operator: '=',
@@ -334,6 +340,7 @@ export async function executeCommand(rawCommand) {
                     result = true;
                 }
             }
+
             break;
 
         case 'FETCH':
