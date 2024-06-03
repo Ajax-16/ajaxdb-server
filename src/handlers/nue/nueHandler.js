@@ -350,9 +350,10 @@ export async function executeCommand(rawCommand) {
             }
 
             const url = commandMatch[1];
-            const rootTableName = commandMatch[2];
+            const creds = commandMatch[2];
+            const rootTableName = commandMatch[3];
 
-            const {data} = await axios.get(url);
+            const {data} = await axios.get(url, {headers: {"User-Agent": "NueDBServerEngine", Accept: '*/*', Authorization: creds}});
 
             await fetchTable(data, rootTableName)
 
@@ -374,10 +375,14 @@ export async function executeCommand(rawCommand) {
                 columns: commandMatch[2] === '*' ? undefined : commandMatch[2].split(',').map(column => column.trim()),
                 tableName: commandMatch[3],
                 orderBy: commandMatch[6],
-                limit: commandMatch[8],
+                limit: clean(commandMatch[8]),
                 offset: commandMatch[9]
             }
 
+            const uniqueColumns = new Set(findQueryObject.columns);
+
+            findQueryObject.columns = [...uniqueColumns];
+            
             if (commandMatch[4]) {
                 const joins = commandMatch[4].split(/\w+\s*\sjoin\s\s*/i).splice(1).map(join => {
                     const divisorElement = join.split(/\s*\son\s\s*/i);
@@ -390,18 +395,17 @@ export async function executeCommand(rawCommand) {
                 });
                 findQueryObject.joins = joins;
             }
-
             if (commandMatch[5]) {
                 findQueryObject.conditions = getConditions(commandMatch[5]);
             }
-
+            
             // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
-            if (commandMatch[7] === undefined || commandMatch[7].toUpperCase() === 'ASC') {
+            if (commandMatch[7] === undefined || commandMatch[7] === null || commandMatch[7].toUpperCase() === 'ASC') {
                 findQueryObject.asc = true;
             } else {
                 findQueryObject.asc = false;
             }
-
+            
             result = await currentDB.find(findQueryObject);
             break;
 

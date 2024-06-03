@@ -39,7 +39,7 @@ export const fetchTable = async (data, tableName) => {
                         tempValues.push(clean(childId[0]));
     
                         if (!Array.isArray(value)) {
-                            columns.push(key);
+                            columns.push(`${key}_id`);
                         }
                     } else {
                         tempValues.push(value);
@@ -62,7 +62,10 @@ export const fetchTable = async (data, tableName) => {
             const columns = []
             if(data[0]!==null) {
                 for (const [key, value] of Object.entries(data[0])) {
-                    if (!Array.isArray(value)) {
+                    if(typeof value === 'object' && !Array.isArray(value)) {
+                        columns.push(`${key}_id`)
+                    }
+                    else if (!Array.isArray(value)) {
                         columns.push(key)
                     }
                 }
@@ -103,7 +106,7 @@ export const fetchTable = async (data, tableName) => {
     for (const row of rows) {
         const elementExist = ormParse(currentDB.find({ tableName, conditions: [{ condition: 'value', operator: '=', conditionValue: row[0] }] }))
             let insertionId;
-        if (elementExist._nue_id_) {
+        if (elementExist._nue_id_>=0) {
             insertionId = elementExist._nue_id_
         } else {
             insertionId = await currentDB.insert({ tableName, values: clean(row) });
