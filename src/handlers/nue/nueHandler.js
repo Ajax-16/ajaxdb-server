@@ -74,7 +74,7 @@ async function handlePreRequestHeaders(headers) {
                                     user.userData = userFromDB;
                                     user.hasAccess = true;
                                 } else {
-                                    throw new Error('auth failed!')
+                                    throw new Error('Auth failed! Maybe using an old password?')
                                 }
                             }
                         } else {
@@ -254,14 +254,15 @@ export async function executeCommand(rawCommand) {
 
         case 'SET':
 
-            if (!user.userData.can_create) {
+            if (!user.userData.can_update) {
                 throw new Error(`User ${user.userData.username} has not privileges to perform this action.`)
             }
 
-            let setPrivs = commandMatch[1];
-            const grantUsername = commandMatch[2];
+            const setTarget = commandMatch[1];
+            let setTargetValue = commandMatch[2];
+            const grantUsername = commandMatch[3];
 
-            // verify username doesn't exist
+            // verify username exist
 
             const grantUserExist = ormParse(await sysDB.find({
                 tableName: 'user',
@@ -274,27 +275,50 @@ export async function executeCommand(rawCommand) {
 
             if (grantUserExist.id === undefined) {
                 throw new Error(`User ${grantUsername} doesn't exist!`);
-            } else {
+            }
+
+            if(/^PRIVILEGE$/ui.test(setTarget)) {
+
                 if (grantUserExist.id === 0) {
                     throw new Error('root user privileges cannot be changed!')
                 }
-            }
-            if (/^NULL$/ui.test(setPrivs)) {
-                setPrivs = [false, false, false, false];
-            } else {
-                setPrivs = parsePrivs(setPrivs);
-            }
 
-            result = await sysDB.update({
-                tableName: 'user',
-                set: ["can_create", "can_read", "can_update", "can_delete"],
-                setValues: setPrivs,
-                conditions: [{
-                    condition: undefined,
-                    operator: '=',
-                    conditionValue: grantUserExist.id
-                }]
-            });
+                if(setTargetValue.length > 4) {
+                    throw new Error(`Invalid extension for privilege word. Expected a maximum of 4 but got ${setTargetValue.length}`);
+                }
+    
+                if (/^NULL$/ui.test(setTargetValue)) {
+                    setTargetValue = [false, false, false, false];
+                } else {
+                    setTargetValue = parsePrivs(setTargetValue);
+                }
+    
+                result = await sysDB.update({
+                    tableName: 'user',
+                    set: ["can_create", "can_read", "can_update", "can_delete"],
+                    setValues: setTargetValue,
+                    conditions: [{
+                        condition: undefined,
+                        operator: '=',
+                        conditionValue: grantUserExist.id
+                    }]
+                });
+
+            }else {
+
+                setTargetValue = bcryptjs.hashSync(setTargetValue, 8);
+
+                result = await sysDB.update({
+                    tableName: 'user',
+                    set: ["password"],
+                    setValues: [setTargetValue],
+                    conditions: [{
+                        condition: undefined,
+                        operator: '=',
+                        conditionValue: grantUserExist.id
+                    }]
+                });
+            }
 
             break;
 
@@ -523,7 +547,7 @@ export async function executeCommand(rawCommand) {
                         }
                     }
 
-                    result = await sysDB.delete({
+                    await sysDB.delete({
                         tableName: 'user',
                         conditions: [{
                             condition: undefined,
@@ -531,6 +555,8 @@ export async function executeCommand(rawCommand) {
                             conditionValue: dropUserExist.id
                         }]
                     })
+
+                    result = `User ${dropUsername} deleted succesfully!`
 
                     break;
             }

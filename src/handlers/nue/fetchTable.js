@@ -103,8 +103,19 @@ export const fetchTable = async (data, tableName) => {
     }
     
     const insertionIds = [];
+    const conditions = []
+    let count = 0;
+
+    for (const column of columns) {
+        conditions.push({condition: column, operator: '=', conditionValue: rows[0][count], logicalOperator: 'AND'})
+        count++;
+    }
+
     for (const row of rows) {
-        const elementExist = ormParse(currentDB.find({ tableName, conditions: [{ condition: 'value', operator: '=', conditionValue: row[0] }] }))
+        const elementExist = ormParse(currentDB.find({ tableName, conditions }))
+        if(counter<10) {
+        console.log(elementExist)
+        }
             let insertionId;
         if (elementExist._nue_id_>=0) {
             insertionId = elementExist._nue_id_

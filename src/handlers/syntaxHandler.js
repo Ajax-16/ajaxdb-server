@@ -65,7 +65,7 @@ export function verifySyntax(command) {
 
         case 'ADD':
 
-            const addRegex = /^\s*ADD\s+USER\s+['"]?([-a-zA-Z0-9()@:%_\+.~#?&//=]+)["']?(?:\s+WITH\s+PASSWORD\s+(\w+))?(?:\s+(?:SET|GRANT)\s+PRIVILEGE\s+([crud]{1,4}|NULL))?$/ui;
+            const addRegex = /^\s*ADD\s+USER\s+['"]?([-a-zA-Z0-9()@:%_\+.~#?&//=]+)["']?(?:\s+WITH\s+PASSWORD\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+))?(?:\s+(?:SET|GRANT)\s+PRIVILEGE\s+([crud]{1,4}|NULL))?$/ui;
 
             if (!addRegex.test(command)) {
                 execError('Invalid format for add command');
@@ -77,15 +77,15 @@ export function verifySyntax(command) {
 
         case 'SET':
 
-            const grantRegex = /^\s*SET\s+PRIVILEGE\s+([crud]{1,4}|NULL)\s+TO\s+(\w+)$/ui;
+            const setRegex = /^\s*SET\s+(PRIVILEGE|PASSWORD)\s+([crud]{1,4}|NULL|[-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s+TO\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)$/ui;
 
-            if (!grantRegex.test(command)) {
+            if (!setRegex.test(command)) {
                 execError('Invalid format for grant command');
             }
 
-            const grantMatch = command.match(grantRegex);
+            const setMatch = command.match(setRegex);
 
-            return { command, commandMatch: grantMatch };
+            return { command, commandMatch: setMatch };
 
         case 'INSERT':
 

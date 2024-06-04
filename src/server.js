@@ -108,7 +108,7 @@ async function handleHTTP(socket, data) {
                     user.userData = userFromDB;
                     user.hasAccess = true;
                   } else {
-                    throw new Error('auth failed!')
+                    throw new Error('Auth failed!')
                   }
                 }
               } else {
