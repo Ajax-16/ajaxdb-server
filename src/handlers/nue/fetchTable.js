@@ -113,9 +113,6 @@ export const fetchTable = async (data, tableName) => {
 
     for (const row of rows) {
         const elementExist = ormParse(currentDB.find({ tableName, conditions }))
-        if(counter<10) {
-        console.log(elementExist)
-        }
             let insertionId;
         if (elementExist._nue_id_>=0) {
             insertionId = elementExist._nue_id_
