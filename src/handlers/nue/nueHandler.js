@@ -7,10 +7,9 @@ import bcryptjs from "bcryptjs";
 import { getConditions, parsePrivs } from './nueUtils.js';
 import axios from "axios";
 import { fetchTable } from './fetchTable.js';
+import { sysDB } from '../../server.js';
 
 export let currentDB = 'placeholder';
-export const sysDB = new DB();
-await sysDB.init('system', 'nue');
 let dbName = ''
 export let user = { userData: null, hasAccess: false }
 let result;
@@ -379,9 +378,11 @@ export async function executeCommand(rawCommand) {
                 offset: commandMatch[9]
             }
 
-            const uniqueColumns = new Set(findQueryObject.columns);
+            if(findQueryObject.columns) {
+                const uniqueColumns = new Set(findQueryObject.columns);
 
-            findQueryObject.columns = [...uniqueColumns];
+                findQueryObject.columns = [...uniqueColumns];
+            }
             
             if (commandMatch[4]) {
                 const joins = commandMatch[4].split(/\w+\s*\sjoin\s\s*/i).splice(1).map(join => {

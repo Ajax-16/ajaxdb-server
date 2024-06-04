@@ -2,12 +2,14 @@ import net from 'net';
 import dotenv from 'dotenv';
 import bcryptjs from "bcryptjs"
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
-import { executeCommand, handleNueRequest, sysDB, user } from './handlers/nue/nueHandler.js';
+import { executeCommand, handleNueRequest, user } from './handlers/nue/nueHandler.js';
 import { createNueResponse, parseNueRequest } from './handlers/nue/nueMessageHandler.js';
 import { verifySysSetup } from './sys_setup.js';
 import { ormParse } from './utils/orm.js';
+import { DB } from 'nuedb_core';
 
 let PORT, CHUNK_SIZE;
+export const sysDB = new DB();
 
 if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
   PORT = process.env.PORT || 3000;
@@ -18,7 +20,8 @@ if (process.env.PORT !== undefined || process.env.CHUNK_SIZE !== undefined) {
   CHUNK_SIZE = process.env.CHUNK_SIZE || 16384; // Tamaño máximo de cada fragmento en bytes
 }
 
-verifySysSetup();
+await verifySysSetup();
+await sysDB.init('system', 'nue');
 
 const server = net.createServer(async (socket) => {
 

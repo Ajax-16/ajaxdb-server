@@ -10,7 +10,7 @@ export async function verifySysSetup() {
         await fs.access(path.join(sysPath, 'nue.json'))
     }catch(err) {
         if (err.code === 'ENOENT') {
-            sysSetup();
+            await sysSetup();
         } else {
             console.log(err.message);
         }
