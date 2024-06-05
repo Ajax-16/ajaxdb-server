@@ -3,7 +3,7 @@ import { clean } from "../../utils/string.js";
 import { currentDB } from "./nueHandler.js";
 
 export const fetchTable = async (data, tableName) => {
-    const columns = [];
+    let columns = [];
     const rows = [];
 
     const processDataRow = async (rowData, parentIndex) => {
@@ -59,7 +59,7 @@ export const fetchTable = async (data, tableName) => {
             await currentDB.createTable({ tableName, primaryKey: '_nue_id_', columns: ['value'] });
             await processDataRow(data);
         } else {
-            const columns = []
+            let columns = []
             if(data[0]!==null) {
                 for (const [key, value] of Object.entries(data[0])) {
                     if(typeof value === 'object' && !Array.isArray(value)) {
@@ -69,6 +69,7 @@ export const fetchTable = async (data, tableName) => {
                         columns.push(key)
                     }
                 }
+                columns = columns.filter(column => column!=='_nue_id_')
                 await currentDB.createTable({ tableName, primaryKey: '_nue_id_', columns });
                 let indexCounter = currentDB.getNextTableIndex(tableName);
                 for (let i = 0; i <data.length;i++) {
@@ -85,7 +86,7 @@ export const fetchTable = async (data, tableName) => {
     }
     
     if( typeof data === 'object' && !Array.isArray(data)){
-        const columns = []
+        let columns = []
         if(data!==null) {
             for (const [key, value] of Object.entries(data)) {
                 if (!Array.isArray(value)) {
@@ -95,7 +96,8 @@ export const fetchTable = async (data, tableName) => {
                         columns.push(key)
                     }
                 }
-            }
+            }                
+            columns = columns.filter(column => column!=='_nue_id_')
             await currentDB.createTable({ tableName, primaryKey: '_nue_id_', columns });
             const nextIndex = currentDB.getNextTableIndex(tableName);
             await processDataRow(data, nextIndex);

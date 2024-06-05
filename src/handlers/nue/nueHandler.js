@@ -10,6 +10,7 @@ import { fetchTable } from './fetchTable.js';
 import { sysDB } from '../../server.js';
 
 export let currentDB = 'placeholder';
+export let lastDbName = '';
 let dbName = ''
 export let user = { userData: null, hasAccess: false }
 let result;
@@ -373,12 +374,25 @@ export async function executeCommand(rawCommand) {
             }
 
             const url = commandMatch[1];
-            const creds = commandMatch[2];
+            let creds = commandMatch[2];
             const rootTableName = commandMatch[3];
 
-            const {data} = await axios.get(url, {headers: {"User-Agent": "NueDBServerEngine", Accept: '*/*', Authorization: creds}});
+            if(creds) {
+                let [credType, cred] = creds.split(' ');
 
-            await fetchTable(data, rootTableName)
+                if(credType === 'Basic') {
+                    cred = Buffer.from(cred).toString('base64');
+                    creds = credType + " " + cred;
+                }
+            }
+            
+            lastDbName = dbName;
+
+            const {data} = await axios.get(url, {headers: {"User-Agent": "NueDBServerEngine", Accept: '*/*', 'Connection': 'keep-alive', Authorization: creds}});
+
+            await fetchTable(data, rootTableName);
+
+            await currentDB.save();
 
             result = true
 
@@ -392,7 +406,7 @@ export async function executeCommand(rawCommand) {
             if (!user.userData.can_read) {
                 throw new Error(`User ${user.userData.username} has not privileges to perform this action.`)
             }
-
+            commandMatch[2] = commandMatch[2] ? commandMatch[2].trim() : commandMatch[2];
             const findQueryObject = {
                 distinct: Boolean(commandMatch[1]),
                 columns: commandMatch[2] === '*' ? undefined : commandMatch[2].split(',').map(column => column.trim()),

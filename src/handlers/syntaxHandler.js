@@ -101,7 +101,7 @@ export function verifySyntax(command) {
 
         case 'FETCH':
 
-            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}(?:\.)?[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*(\w+)\s*$/ui;
+            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\/?&\s,]+)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*(\w+)\s*$/ui;
 
             if(!fetchRegex.test(command)) {
                 execError('Invalid format for fetch command');

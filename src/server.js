@@ -2,7 +2,7 @@ import net from 'net';
 import dotenv from 'dotenv';
 import bcryptjs from "bcryptjs"
 import { createHttpResponse, getHttpRequest, router } from './handlers/http/httpHandler.js';
-import { executeCommand, handleNueRequest, user } from './handlers/nue/nueHandler.js';
+import { currentDB, executeCommand, handleNueRequest, lastDbName, user } from './handlers/nue/nueHandler.js';
 import { createNueResponse, parseNueRequest } from './handlers/nue/nueMessageHandler.js';
 import { verifySysSetup } from './sys_setup.js';
 import { ormParse } from './utils/orm.js';
@@ -108,7 +108,7 @@ async function handleHTTP(socket, data) {
                     user.userData = userFromDB;
                     user.hasAccess = true;
                   } else {
-                    throw new Error('Auth failed!')
+                    socket.write(createHttpResponse({ payload: { error: "Unauthorized access to this resource" }, statusCode: 401 }));
                   }
                 }
               } else {
@@ -116,11 +116,19 @@ async function handleHTTP(socket, data) {
               }
               break;
           }
+        }else {
+          socket.write(createHttpResponse({ payload: { error: "Unauthorized access to this resource" }, statusCode: 401 }));
         }
 
         const routedRequest = await router({ method: request.method, route: request.route, params: request.params, body: request.body })
 
         let result = await executeCommand(routedRequest);
+
+        await currentDB.save();
+
+        if(request.host.includes('localhost') && lastDbName) {
+          await currentDB.init('data', lastDbName);
+        }
 
         socket.write(createHttpResponse({ payload: result, statusCode: 200 }));
 

@@ -132,7 +132,7 @@ export async function router({ method, route = '/', params, body }) {
                 if (body && body.columns) {
                     columns = body.columns.join(', ');
                 } else if (params && params.columns) {
-                    columns = decodeURIComponent(params.columns);
+                    columns = decodeURIComponent(params.columns).trim();
                 }
 
                 command += columns + ' IN ';
@@ -145,28 +145,34 @@ export async function router({ method, route = '/', params, body }) {
 
                 command += table;
 
+                const  innerJoinClause = body ? body.innerJoin || null : params && params.innerJoin || null;
+
+                if(innerJoinClause) {
+                    command += ' INNER JOIN ' + decodeURIComponent(innerJoinClause).trim();
+                }
+
                 const whereClause = body ? body.where || null : params && params.where || null;
 
                 if (whereClause) {
-                    command += ' WHERE ' + decodeURIComponent(whereClause);
+                    command += ' WHERE ' + decodeURIComponent(whereClause).trim();
                 }
 
                 const offsetClause = body ? body.offset || null : params && params.offset || null;
 
                 if (offsetClause) {
-                    command += ' OFFSET ' + decodeURIComponent(offsetClause);
+                    command += ' OFFSET ' + decodeURIComponent(offsetClause).trim();
                 }
 
                 const limitClause = body ? body.limit || null : params && params.limit || null;
 
                 if (limitClause) {
-                    command += ' LIMIT ' + decodeURIComponent(limitClause);
+                    command += ' LIMIT ' + decodeURIComponent(limitClause).trim();
                 }
 
                 const orderByClause = body ? body.orderBy || null : params && params.orderBy || null;
 
                 if (orderByClause) {
-                    command += ' ORDER BY ' + decodeURIComponent(orderByClause);
+                    command += ' ORDER BY ' + decodeURIComponent(orderByClause).trim();
 
                     const ascClause = body ? body.asc || null : params && params.asc || null;
 
@@ -195,7 +201,7 @@ export async function router({ method, route = '/', params, body }) {
 
             }
 
-            return command;
+            return decodeURIComponent(command);
 
         case 'POST':
 
@@ -327,6 +333,5 @@ export async function router({ method, route = '/', params, body }) {
         default:
             throw new Error(`Unsupported method ${method}`);
     }
-
 
 }
