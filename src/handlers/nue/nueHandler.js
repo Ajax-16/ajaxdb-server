@@ -376,6 +376,7 @@ export async function executeCommand(rawCommand) {
             const url = commandMatch[1];
             let creds = commandMatch[2];
             const rootTableName = commandMatch[3];
+            const spidey = commandMatch[4] ? true : false;
 
             if(creds) {
                 let [credType, cred] = creds.split(' ');
@@ -388,9 +389,13 @@ export async function executeCommand(rawCommand) {
             
             lastDbName = dbName;
 
-            const {data} = await axios.get(url, {headers: {"User-Agent": "NueDBServerEngine", Accept: '*/*', 'Connection': 'keep-alive', Authorization: creds}});
+            const headers = {"User-Agent": "NueDBServerEngine", Accept: '*/*', 'Connection': 'keep-alive', Authorization: creds}
 
-            await fetchTable(data, rootTableName);
+            const {data} = await axios.get(url, { headers });
+
+            console.log(spidey)
+
+            await fetchTable(data, rootTableName, 'string', spidey, headers);
 
             await currentDB.save();
 

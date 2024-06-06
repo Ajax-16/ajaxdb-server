@@ -101,7 +101,7 @@ export function verifySyntax(command) {
 
         case 'FETCH':
 
-            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\/?&\s,]+)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*(\w+)\s*$/ui;
+            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\/?&\s,]+)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*(\w+)\s*(?:\s+(SPIDEY))?$/ui;
 
             if(!fetchRegex.test(command)) {
                 execError('Invalid format for fetch command');
@@ -150,7 +150,7 @@ export function verifySyntax(command) {
         case 'FIND':
         case 'SELECT':
 
-            const findRegex = /^\s*(?:FIND|SELECT)\s+((?:DISTINCT\s+)?)((?:[\w.\s,*]+)?)\s+(?:IN|FROM)\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$/ui;
+            const findRegex = /^\s*(?:FIND|SELECT)\s+((?:DISTINCT\s+)?)((?:[\w.\s,*]+)?)\s+(?:IN|FROM)\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w,\s]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$/ui;
 
             if (!findRegex.test(command)) {
                 execError('Invalid format for finding command');
