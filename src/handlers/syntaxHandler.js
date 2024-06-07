@@ -17,6 +17,17 @@ export function verifySyntax(command) {
             }
             return { command };
 
+        case 'UNINIT':
+        case 'UNUSE':
+
+        const uninitRegex = /^\s*(UNINIT|UNUSE)\s*$/ui;
+
+        if(!uninitRegex.test(command)) {
+            execError('Invalid format for uninit command');
+        }
+
+        return { command };
+
         case 'WHOAMI':
 
         const whoamiRegex = /^\s*WHOAMI\s*$/ui;
@@ -101,7 +112,7 @@ export function verifySyntax(command) {
 
         case 'FETCH':
 
-            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\/?&\s,]+)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*(\w+)\s*(?:\s+(SPIDEY))?$/ui;
+            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\/?&\s,]+)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*(\w+)\s*(?:\s+(SPIDER\s+MODE))?$/ui;
 
             if(!fetchRegex.test(command)) {
                 execError('Invalid format for fetch command');

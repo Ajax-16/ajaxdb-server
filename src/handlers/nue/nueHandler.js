@@ -131,6 +131,13 @@ export async function executeCommand(rawCommand) {
             }
             break;
 
+        case 'UNINIT':
+        case 'UNUSE':
+            result = `Unused database ${dbName}`
+            currentDB = ''
+            dbName = ''
+            break;
+
         case 'WHOAMI':
 
             result = user.userData.username;
@@ -245,9 +252,9 @@ export async function executeCommand(rawCommand) {
                 values: newUser
             });
 
-            if(result >= 0) {
+            if (result >= 0) {
                 result = true
-            }else if(typeof result !== 'number') {
+            } else if (typeof result !== 'number') {
                 result = false;
             }
 
@@ -278,22 +285,22 @@ export async function executeCommand(rawCommand) {
                 throw new Error(`User ${grantUsername} doesn't exist!`);
             }
 
-            if(/^PRIVILEGE$/ui.test(setTarget)) {
+            if (/^PRIVILEGE$/ui.test(setTarget)) {
 
                 if (grantUserExist.id === 0) {
                     throw new Error('root user privileges cannot be changed!')
                 }
 
-                if(setTargetValue.length > 4) {
+                if (setTargetValue.length > 4) {
                     throw new Error(`Invalid extension for privilege word. Expected a maximum of 4 but got ${setTargetValue.length}`);
                 }
-    
+
                 if (/^NULL$/ui.test(setTargetValue)) {
                     setTargetValue = [false, false, false, false];
                 } else {
                     setTargetValue = parsePrivs(setTargetValue);
                 }
-    
+
                 result = await sysDB.update({
                     tableName: 'user',
                     set: ["can_create", "can_read", "can_update", "can_delete"],
@@ -305,7 +312,7 @@ export async function executeCommand(rawCommand) {
                     }]
                 });
 
-            }else {
+            } else {
 
                 setTargetValue = bcryptjs.hashSync(setTargetValue, 8);
 
@@ -353,14 +360,14 @@ export async function executeCommand(rawCommand) {
                 }
                 const cleanedValues = cleanValues(insertColumns);
                 result = await currentDB.insert({ tableName: insertTableName, values: cleanedValues });
-                if(typeof result === 'number') {
+                if (typeof result === 'number') {
                     result = true;
                 }
             } else {
                 const cleanedColumns = insertColumns.split(',').map(value => clean(value.trim()));
                 const cleanedValues = cleanValues(insertValues);
                 result = await currentDB.insert({ tableName: insertTableName, columns: cleanedColumns, values: cleanedValues });
-                if(typeof result === 'number') {
+                if (typeof result === 'number') {
                     result = true;
                 }
             }
@@ -378,22 +385,20 @@ export async function executeCommand(rawCommand) {
             const rootTableName = commandMatch[3];
             const spidey = commandMatch[4] ? true : false;
 
-            if(creds) {
+            if (creds) {
                 let [credType, cred] = creds.split(' ');
 
-                if(credType === 'Basic') {
+                if (credType === 'Basic') {
                     cred = Buffer.from(cred).toString('base64');
                     creds = credType + " " + cred;
                 }
             }
-            
+
             lastDbName = dbName;
 
-            const headers = {"User-Agent": "NueDBServerEngine", Accept: '*/*', 'Connection': 'keep-alive', Authorization: creds}
+            const headers = { "User-Agent": "NueDBServerEngine", Accept: '*/*', 'Connection': 'keep-alive', Authorization: creds }
 
-            const {data} = await axios.get(url, { headers });
-
-            console.log(spidey)
+            const { data } = await axios.get(url, { headers });
 
             await fetchTable(data, rootTableName, 'string', spidey, headers);
 
@@ -421,12 +426,12 @@ export async function executeCommand(rawCommand) {
                 offset: commandMatch[9]
             }
 
-            if(findQueryObject.columns) {
+            if (findQueryObject.columns) {
                 const uniqueColumns = new Set(findQueryObject.columns);
 
                 findQueryObject.columns = [...uniqueColumns];
             }
-            
+
             if (commandMatch[4]) {
                 const joins = commandMatch[4].split(/\w+\s*\sjoin\s\s*/i).splice(1).map(join => {
                     const divisorElement = join.split(/\s*\son\s\s*/i);
@@ -442,14 +447,14 @@ export async function executeCommand(rawCommand) {
             if (commandMatch[5]) {
                 findQueryObject.conditions = getConditions(commandMatch[5]);
             }
-            
+
             // Asignación de valor asociado al match que representa la orientación del ordenamiento (ORDER BY) del FIND
             if (commandMatch[7] === undefined || commandMatch[7] === null || commandMatch[7].toUpperCase() === 'ASC') {
                 findQueryObject.asc = true;
             } else {
                 findQueryObject.asc = false;
             }
-            
+
             result = await currentDB.find(findQueryObject);
             break;
 
@@ -527,16 +532,23 @@ export async function executeCommand(rawCommand) {
             switch (dropElement.toUpperCase()) {
                 case 'DATABASE':
                 case 'DB':
-                    await sysDB.delete({
-                        tableName: 'database',
-                        conditions: [{
-                            condition: 'name',
-                            operator: '=',
-                            conditionValue: clean(commandParts[2].trim())
-                        }]
-                    });
 
-                    result = await dropDb('data', commandParts[2].trim());
+                    if (commandParts[2].trim() !== dbName) {
+
+                        await sysDB.delete({
+                            tableName: 'database',
+                            conditions: [{
+                                condition: 'name',
+                                operator: '=',
+                                conditionValue: clean(commandParts[2].trim())
+                            }]
+                        });
+
+                        result = dropDb('data', commandParts[2].trim());
+
+                    } else {
+                        throw new Error('You can\'t delete a initialized database');
+                    }
                     break;
                 case 'TABLE':
                 case 'TB':
