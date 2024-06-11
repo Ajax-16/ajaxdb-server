@@ -5,7 +5,7 @@ export function getConditions(conditionStatement) {
     const conditions = []
     for (let i = 0; i < conditionsArray.length; i++) {
         if (conditionsArray[i].toUpperCase() === 'AND') {
-            const completeCondition = conditionsArray[i + 1].match(/^\s*(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))\s*$/ui)
+            const completeCondition = conditionsArray[i + 1].match(/^\s*([\w/&$%!?¡¿ñ_|\\]+\.[\w/&$%!?¡¿ñ_|\\]+|[\w/&$%!?¡¿ñ_|\\]+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?(?:\s*,\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,.-/&$·!?¡¿ñ_|\\]+[%]?['"]?|\d*\.?\d*)))\s*$/ui)
             let condition = completeCondition[1]
             let operator = completeCondition[2] ? completeCondition[2].trim() : completeCondition[2];
             let conditionValue = clean(completeCondition[3])
@@ -31,7 +31,7 @@ export function getConditions(conditionStatement) {
             })
             i++;
         } else if (conditionsArray[i].toUpperCase() === 'OR') {
-            const completeCondition = conditionsArray[i + 1].match(/^\s*(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))\s*$/ui)
+            const completeCondition = conditionsArray[i + 1].match(/^\s*([\w/&$%!?¡¿ñ_|\\]+\.[\w/&$%!?¡¿ñ_|\\]+|[\w/&$%!?¡¿ñ_|\\]+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?(?:\s*,\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,.-/&$·!?¡¿ñ_|\\]+[%]?['"]?|\d*\.?\d*)))\s*$/ui)
             let condition = completeCondition[1]
             let operator = completeCondition[2] ? completeCondition[2].trim() : completeCondition[2];
             let conditionValue = clean(completeCondition[3])
@@ -55,7 +55,7 @@ export function getConditions(conditionStatement) {
             })
             i++;
         } else {
-            const completeCondition = conditionsArray[i].match(/^\s*(\w+\.\w+|\w+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))\s*$/ui)
+            const completeCondition = conditionsArray[i].match(/^\s*([\w/&$%!?¡¿ñ_|\\]+\.[\w/&$%!?¡¿ñ_|\\]+|[\w/&$%!?¡¿ñ_|\\]+)\s*(=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*((?:\(\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?(?:\s*,\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,.-/&$·!?¡¿ñ_|\\]+[%]?['"]?|\d*\.?\d*)))\s*$/ui)
             let condition = completeCondition[1]
             let operator = completeCondition[2] ? completeCondition[2].trim() : completeCondition[2];
             let conditionValue = clean(completeCondition[3])

@@ -64,7 +64,7 @@ export function verifySyntax(command) {
 
         case 'CREATE':
 
-            const createRegex = /^\s*CREATE\s+(DATABASE|TABLE|DB|TB)\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s*(?:\((\w+\s*(?:as\s+PRIMARY_KEY\s*)?(?:,\s*\w+\s*(?:as\s+PRIMARY_KEY\s*)?)*\s*)\))?$/ui;
+            const createRegex = /^\s*CREATE\s+(DATABASE|TABLE|DB|TB)\s+([\w.-/&$·%!?¡¿ñ_|\\]+)\s*(?:\(([\w.-/&$·%!?¡¿ñ_|\\]+\s*(?:as\s+PRIMARY_KEY\s*)?(?:,\s*[\w.-/&$·%!?¡¿ñ_|\\]+\s*(?:as\s+PRIMARY_KEY\s*)?)*\s*)\))?$/ui;
 
             if (!createRegex.test(command)) {
                 execError('Invalid format for create command')
@@ -76,7 +76,7 @@ export function verifySyntax(command) {
 
         case 'ADD':
 
-            const addRegex = /^\s*ADD\s+USER\s+['"]?([-a-zA-Z0-9()@:%_\+.~#?&//=]+)["']?(?:\s+WITH\s+PASSWORD\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+))?(?:\s+(?:SET|GRANT)\s+PRIVILEGE\s+([crud]{1,4}|NULL))?$/ui;
+            const addRegex = /^\s*ADD\s+USER\s+['"]?([\w.-/&$·!?¡¿ñ_|\\]+)["']?(?:\s+WITH\s+PASSWORD\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+))?(?:\s+(?:SET|GRANT)\s+PRIVILEGE\s+([crud]{1,4}|NULL))?$/ui;
 
             if (!addRegex.test(command)) {
                 execError('Invalid format for add command');
@@ -88,7 +88,7 @@ export function verifySyntax(command) {
 
         case 'SET':
 
-            const setRegex = /^\s*SET\s+(PRIVILEGE|PASSWORD)\s+([crud]{1,4}|NULL|[-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s+TO\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)$/ui;
+            const setRegex = /^\s*SET\s+(PRIVILEGE|PASSWORD)\s+([crud]{1,4}|NULL|[\w.-/&$·%!?¡¿ñ_|\\]+)\s+TO\s+([\w.-/&$·%!?¡¿ñ_|\\]+)$/ui;
 
             if (!setRegex.test(command)) {
                 execError('Invalid format for grant command');
@@ -112,7 +112,7 @@ export function verifySyntax(command) {
 
         case 'FETCH':
 
-            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\/?&\s,]+)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*(\w+)\s*(?:\s+(SPIDER\s+MODE))?$/ui;
+            const fetchRegex = /^\s*FETCH\s+FROM\s+\((https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\/?&\s,]+)\)(?:\s+WITH\s+CREDENTIALS\s+\(([^()]+)\))?\s+ROOT\s+TABLE\s*=\s*([\w.-/&$·%!?¡¿ñ_|\\]+)\s*(?:\s+(SPIDER\s+MODE))?$/ui;
 
             if(!fetchRegex.test(command)) {
                 execError('Invalid format for fetch command');
@@ -148,7 +148,7 @@ export function verifySyntax(command) {
 
         case 'SHOW':
 
-            const showRegex = /^\s*(?:SHOW|LS)\s+(DATABASES|DBS|USERS)(?:\s+LIKE\s+['"](%?[\w\s]+%?)['"])?$/ui;
+            const showRegex = /^\s*(?:SHOW|LS)\s+(DATABASES|DBS|USERS)(?:\s+LIKE\s+['"](%?[\w\s,.-/&$·!?¡¿ñ_|\\]+%?)['"])?$/ui;
 
             if (!showRegex.test(command)) {
                 execError('Invalid format for show command');
@@ -161,7 +161,7 @@ export function verifySyntax(command) {
         case 'FIND':
         case 'SELECT':
 
-            const findRegex = /^\s*(?:FIND|SELECT)\s+((?:DISTINCT\s+)?)((?:[\w.\s,*]+)?)\s+(?:IN|FROM)\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w,\s]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$/ui;
+            const findRegex = /^\s*(?:FIND|SELECT)\s+((?:DISTINCT\s+)?)((?:\*|[\w\s,.-/&$·!?¡¿ñ_|\\]+)?)\s+(?:IN|FROM)\s+(\w+)\s*((?:INNER\s+JOIN\s+\w+\s+(?:ON\s+(?:\w+\.\w+|\w+)\s*=\s*(?:\w+\.\w+|\w+)\s*)*)*)(?:\s*WHERE\s+((?:(?:[\w/&$%!?¡¿ñ_|\\]+\.[\w/&$%!?¡¿ñ_|\\]+|[\w/&$%!?¡¿ñ_|\\]+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?(?:\s*,\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,.-/&$·!?¡¿ñ_|\\]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?(?:\s*,\s*['"]?[\w\s,.-/&$·!?¡¿ñ_|\\]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w\s,-/&$·!?¡¿ñ_|\\]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?(?:ORDER\s+BY\s+((?:\w+\.\w+|\w+))\s*)?((?:ASC|DESC|))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$/ui;
 
             if (!findRegex.test(command)) {
                 execError('Invalid format for finding command');
@@ -173,7 +173,7 @@ export function verifySyntax(command) {
 
         case 'DELETE':
 
-            const deleteRegex = /^\s*DELETE\s*FROM\s*([-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s*(?:\s*WHERE\s+((?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[\w\s,]+['"]?(?:\s*,\s*['"]?[\w\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[\w]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
+            const deleteRegex = /^\s*DELETE\s*FROM\s*([\w.-/&$·%!?¡¿ñ_|\\]+)\s*(?:\s*WHERE\s+((?:(?:[\w/&$%!?¡¿ñ_|\\]+\.[\w/&$%!?¡¿ñ_|\\]+|[\w/&$%!?¡¿ñ_|\\]+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?(?:\s*,\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?(?:\s*,\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
 
             if (!deleteRegex.test(command)) {
                 execError('Invalid format for delete command');

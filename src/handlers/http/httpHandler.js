@@ -145,10 +145,10 @@ export async function router({ method, route = '/', params, body }) {
 
                 command += table;
 
-                const  innerJoinClause = body ? body.innerJoin || null : params && params.innerJoin || null;
+                const  joinsClause = body ? body.joins || null : params && params.joins || null;
 
-                if(innerJoinClause) {
-                    command += ' INNER JOIN ' + decodeURIComponent(innerJoinClause).trim();
+                if(joinsClause) {
+                    command += decodeURIComponent(joinsClause).trim();
                 }
 
                 const whereClause = body ? body.where || null : params && params.where || null;
