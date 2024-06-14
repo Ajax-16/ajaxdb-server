@@ -70,7 +70,8 @@ async function handlePreRequestHeaders(headers) {
                                 user.userData = userFromDB;
                                 user.hasAccess = true;
                             } else {
-                                const uncrpyptedPasswd = bcryptjs.compareSync(password, userFromDB.password);
+                                const uncrpyptedPasswd = await bcryptjs.compare(password, userFromDB.password);
+                                console.log(uncrpyptedPasswd)
                                 if (uncrpyptedPasswd) {
                                     user.userData = userFromDB;
                                     user.hasAccess = true;

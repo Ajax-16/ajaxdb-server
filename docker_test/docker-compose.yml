@@ -2,10 +2,10 @@ services:
   nuedb:
     image: ajax16/nuedb:latest
     ports:
-      - 3000:3000
+      - 4300:4300
     environment:
-      NUEDB_ROOT_USERNAME: davivi
-      NUEDB_ROOT_PASSWORD: 1234
+      NUEDB_ROOT_USERNAME: angular
+      NUEDB_ROOT_PASSWORD: angular
     restart: always
     volumes:
       - 'data:/var/nuedb'
