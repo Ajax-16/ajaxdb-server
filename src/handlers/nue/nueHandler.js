@@ -52,7 +52,7 @@ async function handlePreRequestHeaders(headers) {
                     case 'Classic':
                         const [username, password] = auth.split(':');
 
-                        let currentUser = await sysDB.find({
+                        let currentUser = sysDB.find({
                             tableName: 'user',
                             conditions: [
                                 {

@@ -85,7 +85,7 @@ async function handleHTTP(socket, data) {
 
               const [username, password] = auth.split(':');
 
-              let currentUser = await sysDB.find({
+              let currentUser = sysDB.find({
                 tableName: 'user',
                 conditions: [
                   {
