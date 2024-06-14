@@ -100,7 +100,7 @@ export function verifySyntax(command) {
 
         case 'INSERT':
 
-            const insertRegex = /^\s*INSERT\s+INTO\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s*(?:\(([^()]+)\))?\s*(?:VALUES\s*\(([^()]+)\))?\s*/ui;
+            const insertRegex = /^\s*INSERT\s+INTO\s+([-a-zA-Z0-9()@:%_\+.~#?&//=]+)\s*(?:\(([^]+)\))?\s*(?:VALUES\s*\(([^]+)\))?\s*/ui;
 
             if (!insertRegex.test(command)) {
                 execError('Invalid format for insert command');
@@ -173,7 +173,7 @@ export function verifySyntax(command) {
 
         case 'DELETE':
 
-            const deleteRegex = /^\s*DELETE\s*FROM\s*([\w.-/&$·%!?¡¿ñ_|\\]+)\s*(?:\s*WHERE\s+((?:(?:[\w/&$%!?¡¿ñ_|\\]+\.[\w/&$%!?¡¿ñ_|\\]+|[\w/&$%!?¡¿ñ_|\\]+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?(?:\s*,\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?(?:\s*,\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
+            const deleteRegex = /^\s*DELETE\s*FROM\s*([\w.-/&$·%!?¡¿ñ_|\\]+)\s*(?:\s*WHERE\s+((?:(?:[\w/&$%!?¡¿ñ_|\\]+\.[\w/&$%!?¡¿ñ_|\\]+|[\w/&$%!?¡¿ñ_|\\]+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:(?:\(\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?(?:\s*,\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[-a-zA-Z0-9()\s@:%_\+.~#¡¿!?$·ñÑ&//=]+[%]?['"]?|\d*\.?\d*)))?(?:\s*(?:AND|OR)\s+(?:(?:\w+\.\w+|\w+))\s*(?:=|!=|>|<|>=|<=|\s+LIKE\s+|\s+ILIKE\s+|\s+NOT\s+LIKE\s+|\s+NOT\s+ILIKE\s+|IN|\s+NOT\s+IN\s+)\s*(?:\(\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?(?:\s*,\s*['"]?[-a-zA-Z0-9()@:%_\+.~#¡¿!?$·ñÑ&//=\s,]+['"]?|\d*\.?\d*)*\s*\)|(?:\s*['"]?[%]?[-a-zA-Z0-9()\s@:%_\+.~#¡¿!?$·ñÑ&//=]+[%]?['"]?|\d*\.?\d*))?)*\s*)?)?$/ui;
 
             if (!deleteRegex.test(command)) {
                 execError('Invalid format for delete command');

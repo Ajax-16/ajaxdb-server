@@ -82,7 +82,7 @@ async function handleHTTP(socket, data) {
           switch (type) {
             case 'Basic':
               auth = Buffer.from(auth, 'base64').toString()
-              
+
               const [username, password] = auth.split(':');
 
               let currentUser = await sysDB.find({
@@ -97,7 +97,6 @@ async function handleHTTP(socket, data) {
               })
 
               const userFromDB = ormParse(currentUser);
-
               if (userFromDB.id !== undefined) {
                 if (!userFromDB.password) {
                   user.userData = userFromDB;

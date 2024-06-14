@@ -1,7 +1,7 @@
 import { pascalCaseToCamelCase } from "../../utils/string.js";
 import { statusCodes } from "./lib/httpStatusCodes.js";
 import { ormParse } from "../../utils/orm.js";
-import { handleNueRequest } from "../nue/nueHandler.js";
+import { executeCommand, handleNueRequest } from "../nue/nueHandler.js";
 
 export function getHttpRequest(payload) {
     payload = payload.toString();
@@ -79,13 +79,13 @@ export function createHttpResponse({ payload, version = '1.1', statusCode = '200
     if(payload) {
         payload = ormParse(payload);
         payload = JSON.stringify(payload);
-        contentLength = payload.length;
+        contentLength = new TextEncoder().encode(payload).length;
     }
 
     // Cambiar los CORS para que puedan parametrizarse como configuracion de app
     const CORS = '*'
 
-    let responseHeader = `HTTP/${version} ${statusCode} ${statusMessage}\r\nContent-Type: ${contentType}\r\nContent-Length: ${contentLength}\r\nConnection: ${connection}\r\nAccess-Control-Allow-Origin: ${CORS}`;
+    let responseHeader = `HTTP/${version} ${statusCode} ${statusMessage}\r\nContent-Type: ${contentType}\r\nContent-Length: ${contentLength}\r\nConnection: ${connection}\r\nAccess-Control-Allow-Origin: ${CORS}\r\nAccess-Control-Allow-Headers: ${CORS}`;
     
     if(customHeaders) {
         for(let key in customHeaders) {
@@ -118,7 +118,7 @@ export async function router({ method, route = '/', params, body }) {
 
         case 'GET':
 
-            await handleNueRequest([], `INIT ${database}`);
+            await executeCommand(`INIT ${database}`);
 
             command = 'FIND ';
 
@@ -214,7 +214,7 @@ export async function router({ method, route = '/', params, body }) {
                         throw new Error('No name specification for new table');
                     }
 
-                    await handleNueRequest([], `INIT ${database}`);
+                    await executeCommand(`INIT ${database}`);
 
                     command += `CREATE TABLE ${body.name} (${body.primaryKey} as PRIMARY_KEY`
 
@@ -231,7 +231,7 @@ export async function router({ method, route = '/', params, body }) {
                 }
             } else {
 
-                await handleNueRequest([], `INIT ${database}`);
+                await executeCommand(`INIT ${database}`);
 
                 command = `INSERT INTO ${table} (`
 
@@ -278,7 +278,7 @@ export async function router({ method, route = '/', params, body }) {
                 // TODO: Edición de una tabla (Edición de las columnas de una tabla)
             } else {
 
-                await handleNueRequest([], `INIT ${database}`);
+                await executeCommand(`INIT ${database}`);
 
                 command = `UPDATE ${table} SET `
 
@@ -311,7 +311,7 @@ export async function router({ method, route = '/', params, body }) {
                 command = `DROP DATABASE ${database}`;
             } else {
 
-                await handleNueRequest([], `INIT ${database}`);
+                await executeCommand(`INIT ${database}`);
 
                 command = `DELETE FROM ${table}`
 

@@ -343,33 +343,31 @@ export async function executeCommand(rawCommand) {
             const insertValues = commandMatch[3];
 
             const cleanValues = (values) => {
-                const regex = /(?:'([^']+)'|"([^"]+)")|([^,]+)/g;
+
+                const regex = /(?:("[^"]*")|('[^']*')|([^'",\s]*)|(\d*\.?\d*))/g;
                 const matches = values.matchAll(regex);
                 const cleanedValues = [];
+                
                 for (const match of matches) {
-                    const value = match[0] || match[1] || match[2];
-                    cleanedValues.push(clean(value.trim()));
+                    const value = match[1] || match[2] || match[3] || match[4];
+                    if(value) {
+                        cleanedValues.push(clean(value.trim()));
+                    }
                 }
                 return cleanedValues;
             };
 
             if (insertValues === undefined) {
-                const valuesIndex = command.search(/\bVALUES\b/ui);
-                if (valuesIndex !== -1) {
-                    throw new Error('INSERT command requires a VALUES clause with parameters.');
-                }
                 const cleanedValues = cleanValues(insertColumns);
                 result = await currentDB.insert({ tableName: insertTableName, values: cleanedValues });
-                if (typeof result === 'number') {
-                    result = true;
-                }
             } else {
-                const cleanedColumns = insertColumns.split(',').map(value => clean(value.trim()));
+                const cleanedColumns = insertColumns.split(/('|")\s*,\s*('|")/).map(value => clean(value.trim()));
                 const cleanedValues = cleanValues(insertValues);
                 result = await currentDB.insert({ tableName: insertTableName, columns: cleanedColumns, values: cleanedValues });
-                if (typeof result === 'number') {
-                    result = true;
-                }
+            }
+
+            if (typeof result === 'number') {
+                result = true;
             }
 
             break;
